@@ -18,16 +18,17 @@ export default function Hero() {
     <section
       className="relative min-h-screen flex items-center overflow-hidden"
       style={{
-        backgroundImage: `url(${HERO_IMAGE}), linear-gradient(135deg, #C4896B 0%, #E8C4A8 50%, #F2DDD4 100%)`,
+        /* Misma familia cromática que el resto del sitio (rose-accent / rose-soft / cream) */
+        backgroundImage: `url(${HERO_IMAGE}), linear-gradient(135deg, #A55A6E 0%, #C9788A 38%, #E09AAA 72%, #F2C8D0 100%)`,
         backgroundSize: 'cover',
         backgroundPosition: '56% 42%',
         backgroundBlendMode: 'normal',
       }}
     >
-      {/* Atenuación: un poco más oscuro al centro para titular centrado */}
-      <div className="absolute inset-0 bg-black/25" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/50 to-black/40" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/35 to-black/45" />
+      {/* Velos con tinte rosa (rose-dark) en lugar de gris/negro puro — coherente con header y secciones */}
+      <div className="absolute inset-0 bg-rose-dark/20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-rose-dark/50 via-rose-dark/42 to-rose-dark/38" />
+      <div className="absolute inset-0 bg-gradient-to-b from-rose-dark/28 via-rose-dark/15 to-rose-dark/48" />
 
       {/* Contenido: pt generoso para no solapar el header fijo (h-16 / md:h-20) + aire sobre el badge */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full py-12 pb-28 pt-[calc(5.5rem+env(safe-area-inset-top))] md:py-16 md:pt-[calc(6.5rem+env(safe-area-inset-top))] md:pb-32 flex items-center justify-center min-h-screen text-center">
@@ -41,7 +42,7 @@ export default function Hero() {
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight mb-6">
             <span className="text-white">Entiende tu ciclo.</span>
             <br />
-            <span className="text-[#E8D4C8]">Acompaña tu proceso.</span>
+            <span className="text-rose-soft">Acompaña tu proceso.</span>
             <br />
             <span className="text-white">Con respuestas, no silencios.</span>
           </h1>
@@ -55,14 +56,14 @@ export default function Hero() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
             <button
               onClick={scrollToContact}
-              className="inline-flex items-center justify-center gap-2 bg-[#C4A484] hover:bg-[#B08F6F] text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 hover:shadow-lg active:scale-95"
+              className="inline-flex items-center justify-center gap-2 bg-rose-accent hover:bg-rose-dark text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 hover:shadow-lg active:scale-95"
             >
               Quiero hablar contigo
               <Heart size={16} className="fill-white text-white shrink-0" />
             </button>
             <button
               onClick={() => document.getElementById('sobre-mi')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-white/10 border border-[#E8D4C8]/90 text-[#F5EBE3] font-medium px-8 py-3.5 rounded-full transition-all duration-200 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-rose-soft/15 border border-rose-soft/85 text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 active:scale-95"
             >
               Conóceme
             </button>
@@ -71,8 +72,8 @@ export default function Hero() {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/50">
-        <div className="w-px h-8 bg-white/30 animate-pulse" />
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-rose-soft/60">
+        <div className="w-px h-8 bg-rose-soft/40 animate-pulse" />
       </div>
     </section>
   )
