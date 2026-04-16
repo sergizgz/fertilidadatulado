@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: #FDFAF7;
+    color: #2A2A2A;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-rose-accent text-white font-medium px-7 py-3.5 rounded-full transition-all duration-200 hover:bg-rose-dark hover:shadow-lg active:scale-95;
+  }
+  .btn-outline {
+    @apply inline-flex items-center gap-2 border-2 border-rose-accent text-rose-accent font-medium px-7 py-3.5 rounded-full transition-all duration-200 hover:bg-rose-accent hover:text-white active:scale-95;
+  }
+  .section-title {
+    @apply font-serif text-3xl md:text-4xl text-[#2A2A2A] leading-tight;
+  }
+  .section-subtitle {
+    @apply text-[#6B6B6B] text-lg leading-relaxed;
+  }
+  .card {
+    @apply bg-white rounded-2xl p-7 shadow-sm border border-cream-darker/30 transition-all duration-200 hover:shadow-md;
+  }
+}
