@@ -25,30 +25,34 @@ export default function Hero() {
         backgroundBlendMode: 'normal',
       }}
     >
-      {/* Velos con tinte rosa (rose-dark) en lugar de gris/negro puro — coherente con header y secciones */}
-      <div className="absolute inset-0 bg-rose-dark/20" />
-      <div className="absolute inset-0 bg-gradient-to-r from-rose-dark/50 via-rose-dark/42 to-rose-dark/38" />
-      <div className="absolute inset-0 bg-gradient-to-b from-rose-dark/28 via-rose-dark/15 to-rose-dark/48" />
+      {/*
+        Contraste: base oscura neutra + refuerzo hacia la derecha (sol / flare).
+        El velo rosa va solo como capa suave para marca, sin “lavar” la foto.
+      */}
+      <div className="absolute inset-0 bg-black/45" />
+      <div className="absolute inset-0 bg-gradient-to-l from-black/55 via-black/15 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-rose-dark/35 via-rose-dark/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/45" />
 
       {/* Contenido: pt generoso para no solapar el header fijo (h-16 / md:h-20) + aire sobre el badge */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full py-12 pb-28 pt-[calc(5.5rem+env(safe-area-inset-top))] md:py-16 md:pt-[calc(6.5rem+env(safe-area-inset-top))] md:pb-32 flex items-center justify-center min-h-screen text-center">
         <div className="max-w-3xl w-full flex flex-col items-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-rose-soft/25 backdrop-blur-sm border border-rose-soft/40 rounded-full px-4 py-1.5 mb-6">
+          <div className="inline-flex items-center gap-2 bg-black/35 backdrop-blur-sm border border-white/25 rounded-full px-4 py-1.5 mb-6 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
             <Heart size={13} className="text-rose-soft fill-rose-soft" />
-            <span className="text-sm font-medium text-white/95">Asesora especializada en fertilidad</span>
+            <span className="text-sm font-medium text-white">Asesora especializada en fertilidad</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight mb-6">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 [text-shadow:0_2px_28px_rgba(0,0,0,0.75),0_1px_4px_rgba(0,0,0,0.9)]">
             <span className="text-white">Entiende tu ciclo.</span>
             <br />
-            <span className="text-rose-soft">Acompaña tu proceso.</span>
+            <span className="text-rose-soft [text-shadow:0_2px_24px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.5)]">Acompaña tu proceso.</span>
             <br />
             <span className="text-white">Con respuestas, no silencios.</span>
           </h1>
 
           {/* Subtítulo */}
-          <p className="text-white/85 text-base md:text-lg leading-relaxed mb-10 max-w-xl">
+          <p className="text-white/95 text-base md:text-lg leading-relaxed mb-10 max-w-xl [text-shadow:0_2px_16px_rgba(0,0,0,0.65)]">
             Soy Lidia, enfermera con más de 15 años en reproducción asistida. Te doy la información real que tu clínica no siempre tiene tiempo de explicarte.
           </p>
 
