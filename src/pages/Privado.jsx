@@ -5,8 +5,10 @@ import {
   LogIn, LogOut, LayoutDashboard, Mail, ChevronDown, ChevronUp,
   TrendingUp, Users, Calendar, Tag, MessageSquare, Search,
   Download, ExternalLink, Menu, X, StickyNote, CheckCircle2,
-  Clock, PhoneCall, XCircle
+  Clock, PhoneCall, XCircle, BookOpen,
 } from 'lucide-react'
+import PostList from '../components/blog/PostList'
+import PostEditor from '../components/blog/PostEditor'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -448,10 +450,37 @@ function SubmissionsSection({ submissions, onUpdate, token }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard principal
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Sección: Blog
+// ─────────────────────────────────────────────────────────────────────────────
+function BlogSection({ token }) {
+  const [view, setView] = useState('list')   // 'list' | 'create' | 'edit'
+  const [editingPost, setEditingPost] = useState(null)
+  const [listKey, setListKey] = useState(0)  // forzar re-fetch al volver
+
+  const handleNew = () => { setEditingPost(null); setView('create') }
+  const handleEdit = (post) => { setEditingPost(post); setView('edit') }
+  const handleSave = () => { setView('list'); setListKey(k => k + 1) }
+  const handleCancel = () => { setView('list') }
+
+  if (view === 'create' || view === 'edit') {
+    return (
+      <PostEditor
+        post={editingPost}
+        token={token}
+        onSave={handleSave}
+        onCancel={handleCancel}
+      />
+    )
+  }
+
+  return <PostList key={listKey} token={token} onNew={handleNew} onEdit={handleEdit} />
+}
+
 const NAV_ITEMS = [
   { id: 'stats', label: 'Resumen', icon: LayoutDashboard },
   { id: 'submissions', label: 'Solicitudes', icon: Mail },
-  // Futuras secciones: Descargas, Planes, etc.
+  { id: 'blog', label: 'Blog', icon: BookOpen },
 ]
 
 function Dashboard({ session, onLogout }) {
@@ -553,6 +582,9 @@ function Dashboard({ session, onLogout }) {
                   onUpdate={handleUpdate}
                   token={session.access_token}
                 />
+              )}
+              {activeSection === 'blog' && (
+                <BlogSection token={session.access_token} />
               )}
             </>
           )}

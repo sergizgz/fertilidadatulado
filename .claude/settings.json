@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "supabase-fertilidad": {
+      "command": "/Users/sergioviver/.npm-global/bin/mcp-server-supabase",
+      "args": [
+        "--access-token",
+        "sbp_c51bb749f6f1241149b8788115e5abcf20c757c2",
+        "--project-ref",
+        "sjwaansygeagnmepfheg"
+      ]
+    }
+  }
+}

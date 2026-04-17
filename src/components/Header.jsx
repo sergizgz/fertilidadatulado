@@ -30,6 +30,7 @@ const navLinks = [
   { label: 'Servicios', href: '/#servicios' },
   { label: 'Cómo funciona', href: '/#como-funciona' },
   { label: 'Testimonios', href: '/#testimonios' },
+  { label: 'Blog', href: '/blog' },
 ]
 
 export default function Header() {
@@ -74,14 +75,24 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
           {navLinks.map(link => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={e => handleNavClick(e, link.href)}
-              className="hover:text-rose-accent transition-colors text-sm font-medium text-[#6B6B6B]"
-            >
-              {link.label}
-            </a>
+            link.href.startsWith('/#') ? (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={e => handleNavClick(e, link.href)}
+                className="hover:text-rose-accent transition-colors text-sm font-medium text-[#6B6B6B]"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                to={link.href}
+                className="hover:text-rose-accent transition-colors text-sm font-medium text-[#6B6B6B]"
+              >
+                {link.label}
+              </Link>
+            )
           ))}
           <a
             href="/#contacto"
@@ -106,14 +117,24 @@ export default function Header() {
       {open && (
         <div className="md:hidden bg-cream/98 backdrop-blur-md border-t border-cream-darker/30 px-5 py-6 flex flex-col gap-5">
           {navLinks.map(link => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={e => handleNavClick(e, link.href)}
-              className="text-[#2A2A2A] font-medium text-base"
-            >
-              {link.label}
-            </a>
+            link.href.startsWith('/#') ? (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={e => handleNavClick(e, link.href)}
+                className="text-[#2A2A2A] font-medium text-base"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                to={link.href}
+                className="text-[#2A2A2A] font-medium text-base"
+              >
+                {link.label}
+              </Link>
+            )
           ))}
           <a
             href="/#contacto"
