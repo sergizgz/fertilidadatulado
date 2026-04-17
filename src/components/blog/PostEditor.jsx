@@ -1,71 +1,91 @@
 import { useState, useEffect, useRef } from 'react'
 import TiptapEditor from '../TiptapEditor'
-import { ArrowLeft, Eye, EyeOff, Upload, X, Loader2, Sparkles, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Upload, X, Loader2, Sparkles, CheckCircle2, Copy, Check } from 'lucide-react'
+import { marked } from 'marked'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Modal generador de prompt para IA
+// Modal generador IA
 // ─────────────────────────────────────────────────────────────────────────────
 const TONOS = [
-  { value: 'cercano',       label: 'Cercano y empático',      desc: 'Como una amiga experta que te explica las cosas con calma' },
-  { value: 'profesional',   label: 'Profesional y claro',     desc: 'Riguroso, con datos, sin tecnicismos innecesarios' },
-  { value: 'divulgativo',   label: 'Divulgativo',             desc: 'Educativo y accesible, ideal para quien no sabe nada del tema' },
-  { value: 'motivador',     label: 'Motivador y esperanzador', desc: 'Para acompañar emocionalmente en momentos difíciles' },
+  { value: 'cercano',     label: 'Cercano y empático',       desc: 'Como una amiga experta que explica las cosas con calma' },
+  { value: 'profesional', label: 'Profesional y claro',      desc: 'Riguroso, con datos, sin tecnicismos innecesarios' },
+  { value: 'divulgativo', label: 'Divulgativo',              desc: 'Educativo y accesible, ideal para quien no sabe nada del tema' },
+  { value: 'motivador',   label: 'Motivador y esperanzador', desc: 'Para acompañar emocionalmente en momentos difíciles' },
 ]
 
-function generarPrompt({ tema, ideas, tono }) {
+function buildPrompt({ tema, ideas, tono }) {
   const tonoObj = TONOS.find(t => t.value === tono) ?? TONOS[0]
-  return `Eres el asistente de escritura de Lidia, enfermera especialista en reproducción asistida con más de 15 años de experiencia acompañando a parejas y mujeres en su camino hacia la maternidad. Lidia tiene una web llamada "Fertilidad a Tu Lado" donde publica artículos de blog para informar, acompañar y orientar a sus lectoras.
+  return `Eres el asistente de escritura de Lidia, enfermera especialista en reproducción asistida con más de 15 años de experiencia. Lidia tiene una web llamada "Fertilidad a Tu Lado" donde publica artículos para informar y acompañar a sus lectoras.
 
-SOBRE EL ARTÍCULO:
-- Tema: ${tema}
-- Ideas o puntos que Lidia quiere incluir: ${ideas || 'Ninguna indicación específica, desarrolla el tema con libertad'}
-- Tono deseado: ${tonoObj.label} — ${tonoObj.desc}
+Tema: ${tema}
+Ideas a incluir: ${ideas?.trim() || 'Ninguna indicación específica, desarrolla con libertad'}
+Tono: ${tonoObj.label} — ${tonoObj.desc}
 
-INSTRUCCIONES DE ESCRITURA:
-- Escribe en primera persona del plural o dirigiéndote directamente a la lectora (tú)
-- Usa un lenguaje accesible, sin jerga médica excesiva; cuando uses términos técnicos, explícalos
-- El artículo debe tener entre 500 y 900 palabras
-- Incluye una introducción que enganche, secciones con título y un cierre con llamada a la acción suave
-- No uses frases vacías ni relleno; cada párrafo debe aportar valor real
+Instrucciones:
+- Dirígete directamente a la lectora (tú)
+- Lenguaje accesible; explica los términos técnicos
+- Entre 500 y 900 palabras
+- Introducción que enganche, secciones con título y cierre con llamada a la acción suave
+- Sin frases vacías
 
-FORMATO DE SALIDA (MUY IMPORTANTE):
-Devuelve el artículo en formato Markdown con esta estructura exacta:
-- Los títulos de sección con ## (por ejemplo: ## Por qué es importante)
-- Subtítulos con ### si los hubiera
-- Texto en **negrita** para destacar conceptos clave
-- Listas con - al inicio de cada ítem
-- Citas o frases destacadas con > al inicio
-- Párrafos separados por una línea en blanco
-- NO incluyas el título principal del artículo en el cuerpo (solo las secciones)
-
-Empieza directamente con el contenido del artículo, sin preámbulos ni explicaciones previas.`
+Formato de salida (obligatorio):
+- Títulos de sección con ##
+- Subtítulos con ###
+- Negritas con **texto**
+- Listas con -
+- Citas destacadas con >
+- Párrafos separados por línea en blanco
+- NO incluyas el título principal en el cuerpo
+- Empieza directamente con el contenido, sin preámbulos`
 }
 
-function ModalGeneradorIA({ onClose }) {
-  const [tema, setTema]     = useState('')
-  const [ideas, setIdeas]   = useState('')
-  const [tono, setTono]     = useState('cercano')
-  const [prompt, setPrompt] = useState('')
-  const [copiado, setCopiado] = useState(false)
+function ModalGeneradorIA({ token, onInsert, onClose }) {
+  const [tema, setTema]         = useState('')
+  const [ideas, setIdeas]       = useState('')
+  const [tono, setTono]         = useState('cercano')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState(null)
+  const [done, setDone]         = useState(false)
+  const [copiado, setCopiado]   = useState(false)
 
-  const handleGenerar = () => {
-    if (!tema.trim()) return
-    setPrompt(generarPrompt({ tema, ideas, tono }))
-  }
+  const prompt = buildPrompt({ tema, ideas, tono })
+  const canSubmit = tema.trim() && !loading && !done
 
-  const handleCopiar = async () => {
+  // ── Copiar prompt ──
+  const handleCopiarPrompt = async () => {
     await navigator.clipboard.writeText(prompt)
     setCopiado(true)
     setTimeout(() => setCopiado(false), 2000)
   }
 
+  // ── Generar con Groq ──
+  const handleGenerar = async () => {
+    if (!canSubmit) return
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/generate-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ tema, ideas, tono }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'Error al generar'); return }
+      onInsert(data.markdown)
+      setDone(true)
+      setTimeout(onClose, 1400)
+    } catch {
+      setError('Error de conexión')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Fondo */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={!loading ? onClose : undefined} />
 
-      {/* Panel */}
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
         {/* Cabecera */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-cream-darker/30">
           <div className="flex items-center gap-2.5">
@@ -74,12 +94,14 @@ function ModalGeneradorIA({ onClose }) {
             </div>
             <div>
               <h3 className="font-medium text-[#2A2A2A] text-sm">Generar con IA</h3>
-              <p className="text-xs text-[#9B9B9B]">Crea el prompt y pégalo en ChatGPT, Claude o la IA que prefieras</p>
+              <p className="text-xs text-[#9B9B9B]">Genera el artículo aquí mismo o copia el prompt para tu IA favorita</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-cream-dark text-[#9B9B9B] transition-colors">
-            <X size={18} />
-          </button>
+          {!loading && (
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-cream-dark text-[#9B9B9B] transition-colors">
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         <div className="px-6 py-5 space-y-5">
@@ -92,12 +114,13 @@ function ModalGeneradorIA({ onClose }) {
               type="text"
               value={tema}
               onChange={e => setTema(e.target.value)}
+              disabled={loading}
               placeholder="Ej: Qué es la reserva ovárica y cómo se evalúa"
-              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-cream/50 transition-colors"
+              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-cream/50 transition-colors disabled:opacity-50"
             />
           </div>
 
-          {/* Ideas propias */}
+          {/* Ideas */}
           <div>
             <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">
               Ideas o puntos que quieres incluir
@@ -107,8 +130,9 @@ function ModalGeneradorIA({ onClose }) {
               rows={3}
               value={ideas}
               onChange={e => setIdeas(e.target.value)}
-              placeholder="Ej: Mencionar que la AMH no es un diagnóstico definitivo, que hay que explicar qué es la punción ovárica, añadir que la edad es el factor más importante..."
-              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-cream/50 resize-none transition-colors"
+              disabled={loading}
+              placeholder="Ej: Mencionar que la AMH no es un diagnóstico definitivo, que la edad es el factor más importante..."
+              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-cream/50 resize-none transition-colors disabled:opacity-50"
             />
           </div>
 
@@ -117,16 +141,13 @@ function ModalGeneradorIA({ onClose }) {
             <label className="block text-sm font-medium text-[#2A2A2A] mb-2">Tono del artículo</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {TONOS.map(t => (
-                <button
-                  key={t.value}
-                  type="button"
-                  onClick={() => setTono(t.value)}
+                <button key={t.value} type="button"
+                  onClick={() => !loading && setTono(t.value)}
                   className={`text-left px-4 py-3 rounded-xl border transition-all ${
                     tono === t.value
                       ? 'border-rose-accent bg-rose-soft/20 text-rose-dark'
                       : 'border-cream-darker bg-white text-[#4A4A4A] hover:border-rose-soft'
-                  }`}
-                >
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <p className="text-sm font-medium">{t.label}</p>
                   <p className="text-xs text-[#9B9B9B] mt-0.5">{t.desc}</p>
                 </button>
@@ -134,40 +155,45 @@ function ModalGeneradorIA({ onClose }) {
             </div>
           </div>
 
-          {/* Botón generar */}
-          <button
-            type="button"
-            onClick={handleGenerar}
-            disabled={!tema.trim()}
-            className="w-full inline-flex items-center justify-center gap-2 bg-rose-accent hover:bg-rose-dark text-white font-medium py-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Sparkles size={15} /> Generar prompt
-          </button>
+          {error && (
+            <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</p>
+          )}
 
-          {/* Resultado */}
-          {prompt && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-[#2A2A2A]">Prompt listo — cópialo y pégalo en tu IA</p>
-                <button
-                  type="button"
-                  onClick={handleCopiar}
-                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-all ${
-                    copiado
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-rose-soft/40 text-rose-dark hover:bg-rose-soft'
-                  }`}
-                >
-                  {copiado ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
-                </button>
-              </div>
-              <pre className="bg-cream/80 border border-cream-darker rounded-xl p-4 text-xs text-[#4A4A4A] leading-relaxed whitespace-pre-wrap font-sans max-h-64 overflow-y-auto">
-                {prompt}
-              </pre>
-              <p className="text-xs text-[#9B9B9B]">
-                💡 Copia el prompt, pégalo en ChatGPT o Claude, y cuando te devuelva el artículo pégalo directamente en el editor — el formato se aplicará automáticamente.
-              </p>
-            </div>
+          {/* Acciones */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            {/* Copiar prompt */}
+            <button
+              type="button"
+              onClick={handleCopiarPrompt}
+              disabled={!tema.trim() || loading}
+              className="flex-1 inline-flex items-center justify-center gap-2 border border-rose-soft text-rose-accent hover:bg-rose-soft/20 text-sm font-medium py-3 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {copiado ? <><Check size={14} /> Prompt copiado</> : <><Copy size={14} /> Copiar prompt</>}
+            </button>
+
+            {/* Generar con Groq */}
+            <button
+              type="button"
+              onClick={handleGenerar}
+              disabled={!canSubmit}
+              className="flex-1 inline-flex items-center justify-center gap-2 bg-rose-accent hover:bg-rose-dark text-white text-sm font-medium py-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {done
+                ? <><CheckCircle2 size={15} /> ¡Insertado!</>
+                : loading
+                  ? <><Loader2 size={15} className="animate-spin" /> Generando...</>
+                  : <><Sparkles size={15} /> Generar artículo</>
+              }
+            </button>
+          </div>
+
+          {loading && <p className="text-xs text-center text-[#9B9B9B]">Generando con IA... unos segundos ☕</p>}
+
+          {!loading && tema.trim() && (
+            <p className="text-xs text-[#9B9B9B] text-center">
+              "Copiar prompt" → pégalo en ChatGPT o Claude y luego pega la respuesta en el editor.<br />
+              "Generar artículo" → lo genera aquí directamente y lo inserta solo.
+            </p>
           )}
         </div>
       </div>
@@ -175,6 +201,9 @@ function ModalGeneradorIA({ onClose }) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
 function slugify(text) {
   return text
     .toLowerCase()
@@ -186,6 +215,9 @@ function slugify(text) {
     .replace(/-+/g, '-')
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PostEditor
+// ─────────────────────────────────────────────────────────────────────────────
 export default function PostEditor({ post, token, onSave, onCancel }) {
   const isEditing = !!post
   const coverInputRef = useRef(null)
@@ -246,7 +278,7 @@ export default function PostEditor({ post, token, onSave, onCancel }) {
 
   // ── Guardar ─────────────────────────────────────────────────
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     if (!form.title.trim()) { setError('El título es obligatorio'); return }
     if (!form.slug.trim())  { setError('El slug es obligatorio'); return }
 
@@ -270,151 +302,161 @@ export default function PostEditor({ post, token, onSave, onCancel }) {
     }
   }
 
+  // ── Insertar contenido generado por IA ──────────────────────
+  const handleInsertIA = (markdown) => {
+    const html = marked.parse(markdown, { breaks: false })
+    setForm(f => ({ ...f, content: html }))
+  }
+
   return (
     <>
-    {modalIA && <ModalGeneradorIA onClose={() => setModalIA(false)} />}
-
-    <div className="space-y-6">
-      {/* Cabecera */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <button type="button" onClick={onCancel}
-          className="p-2 rounded-xl hover:bg-cream-dark text-[#9B9B9B] hover:text-[#2A2A2A] transition-colors">
-          <ArrowLeft size={18} />
-        </button>
-        <h2 className="font-serif text-xl text-[#2A2A2A]">
-          {isEditing ? 'Editar entrada' : 'Nueva entrada'}
-        </h2>
-        <div className="ml-auto flex items-center gap-3">
-          {/* Botón IA */}
-          <button type="button" onClick={() => setModalIA(true)}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-accent border border-rose-soft hover:bg-rose-soft/20 px-4 py-2 rounded-full transition-colors">
-            <Sparkles size={14} /> Generar con IA
-          </button>
-          {/* Toggle publicado */}
-          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[#6B6B6B]">
-            {form.published
-              ? <Eye size={15} className="text-green-500" />
-              : <EyeOff size={15} className="text-[#9B9B9B]" />}
-            <span className={form.published ? 'text-green-600 font-medium' : ''}>
-              {form.published ? 'Publicado' : 'Borrador'}
-            </span>
-            <input type="checkbox" className="sr-only" checked={form.published} onChange={set('published')} />
-            <div
-              onClick={() => setForm(f => ({ ...f, published: !f.published }))}
-              className={`w-10 h-5 rounded-full transition-colors cursor-pointer relative
-                ${form.published ? 'bg-green-400' : 'bg-cream-darker'}`}
-            >
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform
-                ${form.published ? 'translate-x-5' : 'translate-x-0.5'}`} />
-            </div>
-          </label>
-          <button type="button" onClick={handleSubmit} disabled={saving}
-            className="inline-flex items-center gap-2 bg-rose-accent hover:bg-rose-dark text-white text-sm font-medium px-5 py-2 rounded-full transition-colors disabled:opacity-60">
-            {saving && <Loader2 size={14} className="animate-spin" />}
-            {saving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear entrada')}
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
-          {error}
-        </div>
+      {modalIA && (
+        <ModalGeneradorIA
+          token={token}
+          onInsert={handleInsertIA}
+          onClose={() => setModalIA(false)}
+        />
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Título */}
-        <div>
-          <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">Título</label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={set('title')}
-            placeholder="Ej: Todo lo que debes saber sobre la estimulación ovárica"
-            className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-white transition-colors"
-          />
+      <div className="space-y-6">
+        {/* Cabecera */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button type="button" onClick={onCancel}
+            className="p-2 rounded-xl hover:bg-cream-dark text-[#9B9B9B] hover:text-[#2A2A2A] transition-colors">
+            <ArrowLeft size={18} />
+          </button>
+          <h2 className="font-serif text-xl text-[#2A2A2A]">
+            {isEditing ? 'Editar entrada' : 'Nueva entrada'}
+          </h2>
+          <div className="ml-auto flex items-center gap-3 flex-wrap">
+            {/* Botón IA */}
+            <button type="button" onClick={() => setModalIA(true)}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-rose-accent border border-rose-soft hover:bg-rose-soft/20 px-4 py-2 rounded-full transition-colors">
+              <Sparkles size={14} /> Generar con IA
+            </button>
+            {/* Toggle publicado */}
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-[#6B6B6B]">
+              {form.published
+                ? <Eye size={15} className="text-green-500" />
+                : <EyeOff size={15} className="text-[#9B9B9B]" />}
+              <span className={form.published ? 'text-green-600 font-medium' : ''}>
+                {form.published ? 'Publicado' : 'Borrador'}
+              </span>
+              <div
+                onClick={() => setForm(f => ({ ...f, published: !f.published }))}
+                className={`w-10 h-5 rounded-full transition-colors cursor-pointer relative
+                  ${form.published ? 'bg-green-400' : 'bg-cream-darker'}`}
+              >
+                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform
+                  ${form.published ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </label>
+            <button type="button" onClick={handleSubmit} disabled={saving}
+              className="inline-flex items-center gap-2 bg-rose-accent hover:bg-rose-dark text-white text-sm font-medium px-5 py-2 rounded-full transition-colors disabled:opacity-60">
+              {saving && <Loader2 size={14} className="animate-spin" />}
+              {saving ? 'Guardando...' : (isEditing ? 'Guardar cambios' : 'Crear entrada')}
+            </button>
+          </div>
         </div>
 
-        {/* Slug */}
-        <div>
-          <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">
-            Slug <span className="text-[#9B9B9B] font-normal">(URL: /blog/<em>{form.slug || 'slug-del-articulo'}</em>)</span>
-          </label>
-          <input
-            type="text"
-            value={form.slug}
-            onChange={e => { setSlugTouched(true); set('slug')(e) }}
-            placeholder="slug-del-articulo"
-            className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-white transition-colors font-mono"
-          />
-        </div>
+        {error && (
+          <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-xl">
+            {error}
+          </div>
+        )}
 
-        {/* Extracto */}
-        <div>
-          <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">
-            Extracto <span className="text-[#9B9B9B] font-normal">(resumen corto para las cards)</span>
-          </label>
-          <textarea
-            rows={2}
-            value={form.excerpt}
-            onChange={set('excerpt')}
-            placeholder="Breve descripción del artículo (1-2 frases)..."
-            maxLength={300}
-            className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-white resize-none transition-colors"
-          />
-          <p className="text-xs text-[#9B9B9B] mt-1 text-right">{form.excerpt.length}/300</p>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Título */}
+          <div>
+            <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">Título</label>
+            <input
+              type="text"
+              value={form.title}
+              onChange={set('title')}
+              placeholder="Ej: Todo lo que debes saber sobre la estimulación ovárica"
+              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-white transition-colors"
+            />
+          </div>
 
-        {/* Imagen de portada */}
-        <div>
-          <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">Imagen de portada</label>
-          {form.cover_image_url ? (
-            <div className="relative w-full max-w-md">
-              <img src={form.cover_image_url} alt="Portada" className="w-full h-48 object-cover rounded-xl border border-cream-darker" />
-              <button type="button"
-                onClick={() => setForm(f => ({ ...f, cover_image_url: '' }))}
-                className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow hover:bg-white transition-colors">
-                <X size={14} className="text-[#6B6B6B]" />
-              </button>
-            </div>
-          ) : (
-            <div
-              onClick={() => coverInputRef.current?.click()}
-              className="flex flex-col items-center justify-center w-full max-w-md h-32 border-2 border-dashed border-cream-darker rounded-xl cursor-pointer hover:border-rose-accent hover:bg-rose-soft/10 transition-colors">
-              {uploadingCover
-                ? <Loader2 size={20} className="text-rose-accent animate-spin" />
-                : <>
-                    <Upload size={20} className="text-[#9B9B9B] mb-2" />
-                    <p className="text-sm text-[#9B9B9B]">Haz clic para subir una imagen</p>
-                    <p className="text-xs text-[#C0C0C0] mt-1">JPG, PNG, WebP · máx. 3 MB</p>
-                  </>
-              }
-            </div>
-          )}
-          <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
-            onChange={e => handleCoverUpload(e.target.files?.[0])} />
-          {/* O URL manual */}
-          {!form.cover_image_url && (
-            <div className="mt-2">
-              <input type="text" value={form.cover_image_url}
-                onChange={set('cover_image_url')}
-                placeholder="O pega una URL de imagen..."
-                className="w-full max-w-md border border-cream-darker rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-rose-accent bg-white transition-colors" />
-            </div>
-          )}
-        </div>
+          {/* Slug */}
+          <div>
+            <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">
+              Slug <span className="text-[#9B9B9B] font-normal">(URL: /blog/<em>{form.slug || 'slug-del-articulo'}</em>)</span>
+            </label>
+            <input
+              type="text"
+              value={form.slug}
+              onChange={e => { setSlugTouched(true); set('slug')(e) }}
+              placeholder="slug-del-articulo"
+              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-white transition-colors font-mono"
+            />
+          </div>
 
-        {/* Contenido */}
-        <div>
-          <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">Contenido</label>
-          <TiptapEditor
-            value={form.content}
-            onChange={val => setForm(f => ({ ...f, content: val }))}
-            token={token}
-          />
-        </div>
-      </form>
-    </div>
+          {/* Extracto */}
+          <div>
+            <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">
+              Extracto <span className="text-[#9B9B9B] font-normal">(resumen corto para las cards)</span>
+            </label>
+            <textarea
+              rows={2}
+              value={form.excerpt}
+              onChange={set('excerpt')}
+              placeholder="Breve descripción del artículo (1-2 frases)..."
+              maxLength={300}
+              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-rose-accent bg-white resize-none transition-colors"
+            />
+            <p className="text-xs text-[#9B9B9B] mt-1 text-right">{form.excerpt.length}/300</p>
+          </div>
+
+          {/* Imagen de portada */}
+          <div>
+            <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">Imagen de portada</label>
+            {form.cover_image_url ? (
+              <div className="relative w-full max-w-md">
+                <img src={form.cover_image_url} alt="Portada" className="w-full h-48 object-cover rounded-xl border border-cream-darker" />
+                <button type="button"
+                  onClick={() => setForm(f => ({ ...f, cover_image_url: '' }))}
+                  className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full shadow hover:bg-white transition-colors">
+                  <X size={14} className="text-[#6B6B6B]" />
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => coverInputRef.current?.click()}
+                className="flex flex-col items-center justify-center w-full max-w-md h-32 border-2 border-dashed border-cream-darker rounded-xl cursor-pointer hover:border-rose-accent hover:bg-rose-soft/10 transition-colors">
+                {uploadingCover
+                  ? <Loader2 size={20} className="text-rose-accent animate-spin" />
+                  : <>
+                      <Upload size={20} className="text-[#9B9B9B] mb-2" />
+                      <p className="text-sm text-[#9B9B9B]">Haz clic para subir una imagen</p>
+                      <p className="text-xs text-[#C0C0C0] mt-1">JPG, PNG, WebP · máx. 3 MB</p>
+                    </>
+                }
+              </div>
+            )}
+            <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
+              onChange={e => handleCoverUpload(e.target.files?.[0])} />
+            {!form.cover_image_url && (
+              <div className="mt-2">
+                <input type="text" value={form.cover_image_url}
+                  onChange={set('cover_image_url')}
+                  placeholder="O pega una URL de imagen..."
+                  className="w-full max-w-md border border-cream-darker rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-rose-accent bg-white transition-colors" />
+              </div>
+            )}
+          </div>
+
+          {/* Contenido */}
+          <div>
+            <label className="block text-sm font-medium text-[#2A2A2A] mb-1.5">Contenido</label>
+            <TiptapEditor
+              value={form.content}
+              onChange={val => setForm(f => ({ ...f, content: val }))}
+              token={token}
+            />
+          </div>
+        </form>
+      </div>
     </>
   )
 }
