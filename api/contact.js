@@ -1,6 +1,12 @@
 import { Resend } from 'resend'
+import { createClient } from '@supabase/supabase-js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 // TODO: cambiar a 'hola@fertilidadatulado.es' cuando el dominio esté verificado en Resend
 const LIDIA_EMAIL = 'sergiociria2@gmail.com'
@@ -28,6 +34,16 @@ export default async function handler(req, res) {
   const serviceLabel = SERVICE_LABELS[service] || 'Sin especificar'
 
   try {
+    // ── 0. Guardar en Supabase ──────────────────────────────────────────────
+    const { error: dbError } = await supabase
+      .from('contact_submissions')
+      .insert({ name, email, service, message })
+
+    if (dbError) {
+      console.error('Error guardando en Supabase:', dbError)
+      // No bloqueamos el flujo: los emails se envían igualmente
+    }
+
     // ── 1. Correo a Lidia con los datos del formulario ──────────────────────
     await resend.emails.send({
       from: FROM_ADDRESS,
