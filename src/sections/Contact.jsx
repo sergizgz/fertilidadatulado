@@ -4,11 +4,28 @@ import { Send, AtSign, Mail, CheckCircle } from 'lucide-react'
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '', service: '' })
   const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: conectar con backend / Formspree / MailerLite
-    setSent(true)
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+
+      if (!res.ok) throw new Error('Error en el servidor')
+      setSent(true)
+    } catch {
+      setError('Ha ocurrido un error al enviar el mensaje. Inténtalo de nuevo o escríbeme directamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -93,9 +110,19 @@ export default function Contact() {
                   Al enviar este formulario aceptas la <a href="/privacidad" className="underline hover:text-rose-accent">política de privacidad</a>.
                 </p>
 
-                <button type="submit" className="btn-primary w-full justify-center">
-                  Enviar mensaje
-                  <Send size={16} />
+                {error && (
+                  <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Enviando...' : 'Enviar mensaje'}
+                  {!loading && <Send size={16} />}
                 </button>
               </form>
             )}
