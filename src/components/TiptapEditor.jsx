@@ -8,9 +8,9 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useEffect, useRef, useCallback } from 'react'
 import { marked } from 'marked'
 
-// Detecta si el texto pegado tiene sintaxis markdown
+// Detecta si el texto tiene sintaxis markdown (flag m → ^ evalúa cada línea)
 function looksLikeMarkdown(text) {
-  return /^#{1,6}\s|^\*\*|^\*[^*]|^-\s|^\d+\.\s|^>\s/.test(text)
+  return /^#{1,6}\s|^\*\*|^\*[^*]|^-\s|^\d+\.\s|^>\s/m.test(text)
 }
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -45,6 +45,7 @@ function Divider() {
 export default function TiptapEditor({ value, onChange, token, placeholder = 'Escribe el contenido del artículo aquí...' }) {
   const fileInputRef = useRef(null)
   const uploadingRef = useRef(false)
+  const editorRef = useRef(null)  // ref para acceder al editor dentro de handlePaste
 
   const editor = useEditor({
     extensions: [
@@ -59,26 +60,22 @@ export default function TiptapEditor({ value, onChange, token, placeholder = 'Es
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: { class: 'focus:outline-none' },
+      // handlePaste es el hook oficial de ProseMirror — se ejecuta ANTES
+      // de que ProseMirror procese el pegado. Devolver true = lo manejamos nosotros.
+      handlePaste: (_view, event) => {
+        const text = event.clipboardData?.getData('text/plain') ?? ''
+        if (!looksLikeMarkdown(text)) return false
+        const html = marked.parse(text, { breaks: false })
+        editorRef.current?.chain().focus().insertContent(html, {
+          parseOptions: { preserveWhitespace: false },
+        }).run()
+        return true
+      },
     },
   })
 
-  // Interceptar pegado de markdown y convertirlo a HTML
-  useEffect(() => {
-    if (!editor) return
-    const dom = editor.view.dom
-    const handlePaste = (e) => {
-      const text = e.clipboardData?.getData('text/plain') ?? ''
-      if (!looksLikeMarkdown(text)) return
-      e.preventDefault()
-      e.stopPropagation()
-      const html = marked.parse(text, { breaks: false })
-      editor.chain().focus().insertContent(html, {
-        parseOptions: { preserveWhitespace: false },
-      }).run()
-    }
-    dom.addEventListener('paste', handlePaste)
-    return () => dom.removeEventListener('paste', handlePaste)
-  }, [editor])
+  // Mantener el ref sincronizado con la instancia del editor
+  useEffect(() => { editorRef.current = editor }, [editor])
 
   // Sincronizar valor externo cuando cambia el post seleccionado
   useEffect(() => {
