@@ -40,10 +40,13 @@ export default function About() {
               <span className="text-rose-accent italic">Y sé lo que sientes.</span>
             </h2>
             <p className="text-[#6B6B6B] leading-relaxed mb-5">
-              Llevo más de 15 años trabajando en unidades de reproducción asistida. He visto miles de procesos de cerca — los protocolos, las esperas, el impacto emocional. Y he comprobado que la información marca la diferencia.
+              Llevo más de 15 años trabajando en unidades de reproducción asistida, especialmente desde el área de enfermería reproductiva. He estado muy cerca de miles de procesos: tratamientos, decisiones, esperas… y, sobre todo, del impacto emocional que conllevan. Y si hay algo que he aprendido, es que la información —clara, honesta y bien explicada— marca una diferencia enorme.
+            </p>
+            <p className="text-[#6B6B6B] leading-relaxed mb-5">
+              Durante años viví todo esto desde el lado clínico. Pero en 2022 me convertí en madre, y tiempo después volví a serlo. Esa experiencia transformó por completo mi forma de entender este proceso. Porque cuando eres tú quien desea con todas sus fuerzas, quien espera, quien duda… todo se vive de una manera muy distinta.
             </p>
             <p className="text-[#6B6B6B] leading-relaxed mb-8">
-              Muchas mujeres llegan a mí agotadas, confusas, sintiendo que no entienden lo que les pasa. Mi trabajo es cambiar eso: explicarte de verdad lo que nadie te explica en consulta, y acompañarte en cada paso.
+              En primera persona entendí la incertidumbre, la necesidad de respuestas claras y lo difícil que es, a veces, no tener a quién acudir. Por eso decidí dar un paso más: acompañar desde un lugar diferente, donde puedas preguntar sin miedo y no tengas que sentirte sola en tu proceso.
             </p>
 
             <ul className="space-y-3 mb-10">

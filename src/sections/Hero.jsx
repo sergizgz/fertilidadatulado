@@ -53,7 +53,7 @@ export default function Hero() {
 
           {/* Subtítulo */}
           <p className="text-white/95 text-base md:text-lg leading-relaxed mb-10 max-w-xl [text-shadow:0_2px_16px_rgba(0,0,0,0.65)]">
-            Soy Lidia, enfermera con más de 15 años en reproducción asistida. Te doy la información real que tu clínica no siempre tiene tiempo de explicarte.
+            Entender tu cuerpo es el primer paso para vivir la búsqueda de embarazo con más claridad y tranquilidad. Buscar un embarazo no debería vivirse a ciegas ni en soledad.
           </p>
 
           {/* CTAs */}
