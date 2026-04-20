@@ -75,10 +75,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-rose-soft/60">
-        <div className="w-px h-8 bg-rose-soft/40 animate-pulse" />
-      </div>
     </section>
   )
 }
