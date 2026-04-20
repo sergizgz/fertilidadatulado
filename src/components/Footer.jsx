@@ -25,9 +25,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
           {/* Brand */}
           <div>
-            <div className="flex flex-col items-start mb-4">
-              <LogoIcon size={72} />
-              <span className="font-serif text-white text-lg mt-2">
+            <div className="flex items-center gap-0 mb-4">
+              <LogoIcon size={120} />
+              <span className="font-serif text-white text-lg">
                 Fertilidad <span className="text-rose-soft">a Tu Lado</span>
               </span>
             </div>
