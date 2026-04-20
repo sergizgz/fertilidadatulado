@@ -22,7 +22,7 @@ export default function HowItWorks() {
       <div className="max-w-5xl mx-auto px-5">
         <div className="text-center mb-14">
           <p className="text-rose-accent font-medium text-sm uppercase tracking-wider mb-3">El proceso</p>
-          <h2 className="section-title mb-4">Así es como trabajamos</h2>
+          <h2 className="section-title mb-4">Así es como trabajo</h2>
           <p className="section-subtitle max-w-lg mx-auto">
             Sin burocracia, sin esperas largas. Empezamos cuando tú estés lista.
           </p>
