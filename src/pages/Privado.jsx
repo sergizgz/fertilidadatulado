@@ -126,15 +126,7 @@ function LoginForm({ onLogin }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Sección: Estadísticas
 // ─────────────────────────────────────────────────────────────────────────────
-function StatsSection({ submissions }) {
-  const [subscriberCount, setSubscriberCount] = useState(null)
-
-  useEffect(() => {
-    supabase
-      .from('subscribers')
-      .select('id', { count: 'exact', head: true })
-      .then(({ count }) => setSubscriberCount(count ?? 0))
-  }, [])
+function StatsSection({ submissions, subscriberCount }) {
 
   const now = new Date()
   const thisMonth = submissions.filter(s => {
@@ -1085,20 +1077,20 @@ function ServicesSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Sección: Suscriptores (guía gratuita)
 // ─────────────────────────────────────────────────────────────────────────────
-function SubscribersSection() {
+function SubscribersSection({ token }) {
   const [subscribers, setSubscribers] = useState([])
   const [loading, setLoading]         = useState(true)
   const [search, setSearch]           = useState('')
   const [sortDir, setSortDir]         = useState('desc')
 
   useEffect(() => {
-    supabase
-      .from('subscribers')
-      .select('id, email, created_at, source')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { if (data) setSubscribers(data) })
+    fetch('/api/subscribers', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(({ subscribers }) => { if (subscribers) setSubscribers(subscribers) })
       .finally(() => setLoading(false))
-  }, [])
+  }, [token])
 
   const exportSubscribersXLSX = (data) => {
     const rows = data.map(s => ({
@@ -1241,16 +1233,19 @@ const NAV_ITEMS = [
 function Dashboard({ session, onLogout }) {
   const [activeSection, setActiveSection] = useState('stats')
   const [submissions, setSubmissions] = useState([])
+  const [subscriberCount, setSubscriberCount] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    fetch('/api/submissions', {
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    })
-      .then(r => r.json())
-      .then(({ submissions }) => setSubmissions(submissions ?? []))
-      .finally(() => setLoading(false))
+    const headers = { Authorization: `Bearer ${session.access_token}` }
+    Promise.all([
+      fetch('/api/submissions', { headers }).then(r => r.json()),
+      fetch('/api/subscribers', { headers }).then(r => r.json()),
+    ]).then(([subData, suscData]) => {
+      setSubmissions(subData.submissions ?? [])
+      setSubscriberCount((suscData.subscribers ?? []).length)
+    }).finally(() => setLoading(false))
   }, [session])
 
   const handleUpdate = useCallback((updated) => {
@@ -1330,7 +1325,7 @@ function Dashboard({ session, onLogout }) {
             <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm">Cargando datos...</div>
           ) : (
             <>
-              {activeSection === 'stats' && <StatsSection submissions={submissions} />}
+              {activeSection === 'stats' && <StatsSection submissions={submissions} subscriberCount={subscriberCount} />}
               {activeSection === 'submissions' && (
                 <SubmissionsSection
                   submissions={submissions}
@@ -1338,7 +1333,7 @@ function Dashboard({ session, onLogout }) {
                   token={session.access_token}
                 />
               )}
-              {activeSection === 'subscribers' && <SubscribersSection />}
+              {activeSection === 'subscribers' && <SubscribersSection token={session.access_token} />}
               {activeSection === 'blog' && (
                 <BlogSection token={session.access_token} />
               )}
