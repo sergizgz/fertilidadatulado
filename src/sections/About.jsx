@@ -1,8 +1,6 @@
 import { CheckCircle } from 'lucide-react'
 
-/** Dev / broma: quitar antes de producción y usar foto real de Lidia con permiso de uso. */
-const LIDIA_PHOTO_PLACEHOLDER =
-  'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiwgWTn01Q-MwEsnDamnSG5ca2-hN855sGDmwwByfHMAwcrl8CKOV_BA9AvnWHMq2HxfJRDiTnUks3QtFs7QEuT6r2qdk4QvaeUOUk1BIy0zbW0X2E_-1Nc-7W3onAjZaZRPBOUr8es8FDy/s1600/HandmaidsTale_01_Ann_Dowd_Seamless_JG_07612rt.jpg'
+const LIDIA_PHOTO_PLACEHOLDER = '/lidia.jpg'
 
 const credentials = [
   'Enfermera especialista, +15 años en reproducción asistida',
