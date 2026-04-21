@@ -6,9 +6,12 @@ import {
   TrendingUp, Users, Calendar, Tag, MessageSquare, Search,
   Download, ExternalLink, Menu, X, StickyNote, CheckCircle2,
   Clock, PhoneCall, XCircle, BookOpen, ImageIcon, Upload, CheckCircle, AlertCircle, Loader2,
+  Leaf, Heart, Stethoscope, Baby, Star, Shield, Sparkles, Moon, Sun,
+  Layers, Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import PostList from '../components/blog/PostList'
 import PostEditor from '../components/blog/PostEditor'
+import { ICON_MAP } from '../sections/Services'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -761,10 +764,319 @@ function ImagesSection() {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Sección: Servicios
+// ─────────────────────────────────────────────────────────────────────────────
+const ICON_OPTIONS = [
+  { key: 'heart',          label: 'Corazón',      Icon: Heart },
+  { key: 'leaf',           label: 'Hoja',         Icon: Leaf },
+  { key: 'stethoscope',    label: 'Estetoscopio', Icon: Stethoscope },
+  { key: 'baby',           label: 'Bebé',         Icon: Baby },
+  { key: 'calendar',       label: 'Calendario',   Icon: Calendar },
+  { key: 'book-open',      label: 'Libro',        Icon: BookOpen },
+  { key: 'message-circle', label: 'Mensaje',      Icon: MessageSquare },
+  { key: 'star',           label: 'Estrella',     Icon: Star },
+  { key: 'shield',         label: 'Escudo',       Icon: Shield },
+  { key: 'sparkles',       label: 'Destellos',    Icon: Sparkles },
+  { key: 'moon',           label: 'Luna',         Icon: Moon },
+  { key: 'sun',            label: 'Sol',          Icon: Sun },
+]
+
+const EMPTY_SERVICE = {
+  title: '', description: '', includes: [''], cta: 'Contactar',
+  icon: 'heart', featured: false, active: true,
+}
+
+function ServiceForm({ service, onSave, onCancel }) {
+  const isNew = !service.id
+  const [form, setForm] = useState({ ...EMPTY_SERVICE, ...service })
+  const [saving, setSaving] = useState(false)
+  const [error, setError]   = useState('')
+
+  const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
+
+  const addInclude    = () => set('includes', [...form.includes, ''])
+  const removeInclude = (i) => set('includes', form.includes.filter((_, j) => j !== i))
+  const editInclude   = (i, v) => set('includes', form.includes.map((x, j) => j === i ? v : x))
+
+  const handleSave = async () => {
+    if (!form.title.trim() || !form.description.trim()) {
+      setError('El título y la descripción son obligatorios.')
+      return
+    }
+    setSaving(true)
+    setError('')
+    const payload = {
+      ...form,
+      includes: form.includes.filter(x => x.trim()),
+    }
+    const { error: err } = isNew
+      ? await supabase.from('services').insert(payload)
+      : await supabase.from('services').update(payload).eq('id', service.id)
+    setSaving(false)
+    if (err) setError(err.message)
+    else onSave()
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-cream-darker/30 p-6 max-w-2xl">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="font-serif text-lg text-[#2A2A2A]">{isNew ? 'Nuevo servicio' : 'Editar servicio'}</h3>
+        <button onClick={onCancel} className="text-[#9B9B9B] hover:text-[#2A2A2A]"><X size={18} /></button>
+      </div>
+
+      <div className="space-y-5">
+        {/* Título */}
+        <div>
+          <label className="block text-xs font-medium text-[#6B6B6B] mb-1.5">Título *</label>
+          <input
+            type="text" value={form.title} onChange={e => set('title', e.target.value)}
+            placeholder="Ej: Consulta Puntual"
+            className="w-full border border-cream-darker/50 rounded-xl px-4 py-2.5 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent"
+          />
+        </div>
+
+        {/* Descripción */}
+        <div>
+          <label className="block text-xs font-medium text-[#6B6B6B] mb-1.5">Descripción *</label>
+          <textarea
+            value={form.description} onChange={e => set('description', e.target.value)}
+            rows={3} placeholder="Breve descripción del servicio..."
+            className="w-full border border-cream-darker/50 rounded-xl px-4 py-2.5 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent resize-none"
+          />
+        </div>
+
+        {/* Qué incluye */}
+        <div>
+          <label className="block text-xs font-medium text-[#6B6B6B] mb-1.5">Qué incluye</label>
+          <div className="space-y-2">
+            {form.includes.map((item, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  type="text" value={item} onChange={e => editInclude(i, e.target.value)}
+                  placeholder={`Punto ${i + 1}`}
+                  className="flex-1 border border-cream-darker/50 rounded-xl px-4 py-2 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent"
+                />
+                <button onClick={() => removeInclude(i)} className="text-[#9B9B9B] hover:text-red-400 p-2">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={addInclude}
+              className="flex items-center gap-1.5 text-xs text-rose-accent hover:text-rose-dark font-medium mt-1"
+            >
+              <Plus size={13} /> Añadir punto
+            </button>
+          </div>
+        </div>
+
+        {/* Texto del botón */}
+        <div>
+          <label className="block text-xs font-medium text-[#6B6B6B] mb-1.5">Texto del botón</label>
+          <input
+            type="text" value={form.cta} onChange={e => set('cta', e.target.value)}
+            placeholder="Ej: Reservar consulta"
+            className="w-full border border-cream-darker/50 rounded-xl px-4 py-2.5 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent"
+          />
+        </div>
+
+        {/* Icono */}
+        <div>
+          <label className="block text-xs font-medium text-[#6B6B6B] mb-2">Icono</label>
+          <div className="flex flex-wrap gap-2">
+            {ICON_OPTIONS.map(({ key, label, Icon }) => (
+              <button
+                key={key}
+                onClick={() => set('icon', key)}
+                title={label}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                  form.icon === key
+                    ? 'bg-rose-accent text-white shadow-sm'
+                    : 'bg-cream-dark text-[#6B6B6B] hover:bg-cream-darker'
+                }`}
+              >
+                <Icon size={16} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Opciones */}
+        <div className="flex gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.featured} onChange={e => set('featured', e.target.checked)}
+              className="accent-rose-accent w-4 h-4" />
+            <span className="text-sm text-[#2A2A2A]">Destacado <span className="text-[#9B9B9B] text-xs">(«Más solicitado»)</span></span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)}
+              className="accent-rose-accent w-4 h-4" />
+            <span className="text-sm text-[#2A2A2A]">Visible en la web</span>
+          </label>
+        </div>
+
+        {error && <p className="text-red-500 text-xs">{error}</p>}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={handleSave} disabled={saving}
+            className="flex items-center gap-2 bg-rose-accent hover:bg-rose-dark disabled:opacity-60 text-white text-sm font-medium px-6 py-2.5 rounded-full transition-colors"
+          >
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : (isNew ? 'Crear servicio' : 'Guardar cambios')}
+          </button>
+          <button onClick={onCancel} className="text-sm text-[#6B6B6B] hover:text-[#2A2A2A] px-4 py-2.5">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ServicesSection() {
+  const [services, setServices]   = useState([])
+  const [loading, setLoading]     = useState(true)
+  const [editing, setEditing]     = useState(null) // null | service obj | 'new'
+  const [deleting, setDeleting]   = useState(null) // id to confirm delete
+
+  const load = () => {
+    setLoading(true)
+    supabase.from('services').select('*').order('sort_order')
+      .then(({ data }) => { if (data) setServices(data) })
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(load, [])
+
+  const toggleActive = async (s) => {
+    await supabase.from('services').update({ active: !s.active }).eq('id', s.id)
+    setServices(prev => prev.map(x => x.id === s.id ? { ...x, active: !s.active } : x))
+  }
+
+  const move = async (index, dir) => {
+    const next = index + dir
+    if (next < 0 || next >= services.length) return
+    const updated = [...services]
+    ;[updated[index], updated[next]] = [updated[next], updated[index]]
+    // Reassign sort_order
+    const toUpdate = updated.map((s, i) => ({ id: s.id, sort_order: i + 1 }))
+    setServices(updated.map((s, i) => ({ ...s, sort_order: i + 1 })))
+    await Promise.all(toUpdate.map(({ id, sort_order }) =>
+      supabase.from('services').update({ sort_order }).eq('id', id)
+    ))
+  }
+
+  const confirmDelete = async () => {
+    if (!deleting) return
+    await supabase.from('services').delete().eq('id', deleting)
+    setServices(prev => prev.filter(s => s.id !== deleting))
+    setDeleting(null)
+  }
+
+  if (loading) return <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm"><Loader2 size={18} className="animate-spin mr-2" /> Cargando...</div>
+
+  if (editing) return (
+    <div>
+      <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 text-sm text-[#9B9B9B] hover:text-rose-accent mb-6">
+        ← Volver a servicios
+      </button>
+      <ServiceForm
+        service={editing === 'new' ? {} : editing}
+        onSave={() => { setEditing(null); load() }}
+        onCancel={() => setEditing(null)}
+      />
+    </div>
+  )
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="font-serif text-xl text-[#2A2A2A]">Servicios</h2>
+          <p className="text-sm text-[#9B9B9B] mt-0.5">{services.filter(s => s.active).length} visibles · {services.length} en total</p>
+        </div>
+        <button
+          onClick={() => setEditing('new')}
+          className="flex items-center gap-2 bg-rose-accent hover:bg-rose-dark text-white text-sm font-medium px-5 py-2.5 rounded-full transition-colors"
+        >
+          <Plus size={15} /> Nuevo servicio
+        </button>
+      </div>
+
+      {/* Lista */}
+      <div className="space-y-3">
+        {services.map((s, i) => {
+          const Icon = ICON_MAP[s.icon] ?? Heart
+          return (
+            <div key={s.id} className={`bg-white rounded-2xl border p-4 flex items-center gap-4 transition-all ${
+              s.active ? 'border-cream-darker/30' : 'border-cream-darker/20 opacity-60'
+            }`}>
+              {/* Icono */}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${s.featured ? 'bg-rose-accent' : 'bg-rose-soft'}`}>
+                <Icon size={18} className={s.featured ? 'text-white' : 'text-rose-accent'} />
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-sm text-[#2A2A2A] truncate">{s.title}</p>
+                  {s.featured && <span className="text-xs bg-rose-soft text-rose-dark px-2 py-0.5 rounded-full">Destacado</span>}
+                  {!s.active && <span className="text-xs bg-cream-dark text-[#9B9B9B] px-2 py-0.5 rounded-full">Oculto</span>}
+                </div>
+                <p className="text-xs text-[#9B9B9B] truncate mt-0.5">{s.includes?.length ?? 0} puntos incluidos</p>
+              </div>
+
+              {/* Acciones */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => move(i, -1)} disabled={i === 0} className="p-1.5 rounded-lg text-[#9B9B9B] hover:text-[#2A2A2A] hover:bg-cream-dark disabled:opacity-30 transition-colors" title="Subir">
+                  <ArrowUp size={14} />
+                </button>
+                <button onClick={() => move(i, 1)} disabled={i === services.length - 1} className="p-1.5 rounded-lg text-[#9B9B9B] hover:text-[#2A2A2A] hover:bg-cream-dark disabled:opacity-30 transition-colors" title="Bajar">
+                  <ArrowDown size={14} />
+                </button>
+                <button onClick={() => toggleActive(s)} className="p-1.5 rounded-lg text-[#9B9B9B] hover:text-[#2A2A2A] hover:bg-cream-dark transition-colors" title={s.active ? 'Ocultar' : 'Mostrar'}>
+                  {s.active ? <Eye size={14} /> : <EyeOff size={14} />}
+                </button>
+                <button onClick={() => setEditing(s)} className="p-1.5 rounded-lg text-[#9B9B9B] hover:text-rose-accent hover:bg-rose-soft/20 transition-colors" title="Editar">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={() => setDeleting(s.id)} className="p-1.5 rounded-lg text-[#9B9B9B] hover:text-red-400 hover:bg-red-50 transition-colors" title="Eliminar">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {services.length === 0 && (
+        <div className="text-center py-16 text-[#9B9B9B]">
+          <Layers size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No hay servicios todavía.</p>
+        </div>
+      )}
+
+      {/* Modal confirmación borrado */}
+      {deleting && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h4 className="font-serif text-lg text-[#2A2A2A] mb-2">¿Eliminar servicio?</h4>
+            <p className="text-sm text-[#6B6B6B] mb-6">Esta acción no se puede deshacer. El servicio desaparecerá de la web.</p>
+            <div className="flex gap-3">
+              <button onClick={confirmDelete} className="flex-1 bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2.5 rounded-full transition-colors">Eliminar</button>
+              <button onClick={() => setDeleting(null)} className="flex-1 bg-cream-dark hover:bg-cream-darker text-[#2A2A2A] text-sm font-medium py-2.5 rounded-full transition-colors">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const NAV_ITEMS = [
   { id: 'stats', label: 'Resumen', icon: LayoutDashboard },
   { id: 'submissions', label: 'Solicitudes', icon: Mail },
   { id: 'blog', label: 'Blog', icon: BookOpen },
+  { id: 'services', label: 'Servicios', icon: Layers },
   { id: 'images', label: 'Imágenes', icon: ImageIcon },
 ]
 
@@ -871,6 +1183,7 @@ function Dashboard({ session, onLogout }) {
               {activeSection === 'blog' && (
                 <BlogSection token={session.access_token} />
               )}
+              {activeSection === 'services' && <ServicesSection />}
               {activeSection === 'images' && <ImagesSection />}
             </>
           )}
