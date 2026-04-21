@@ -4,6 +4,7 @@ import About from '../sections/About'
 import Services from '../sections/Services'
 import HowItWorks from '../sections/HowItWorks'
 import Testimonials from '../sections/Testimonials'
+import LeadMagnet from '../sections/LeadMagnet'
 import BlogPreview from '../sections/BlogPreview'
 import Contact from '../sections/Contact'
 
@@ -19,6 +20,7 @@ export default function Home() {
       <Services />
       <HowItWorks />
       <Testimonials />
+      <LeadMagnet />
       <BlogPreview />
       <Contact />
     </>
