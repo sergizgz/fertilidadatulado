@@ -15,7 +15,7 @@ import PostEditor from '../components/blog/PostEditor'
 // ─────────────────────────────────────────────────────────────────────────────
 const SERVICE_LABELS = {
   preconcepcion: 'Preconcepción',
-  fiv: 'FIV / IAC',
+  fiv: 'FIV / IA',
   consulta: 'Consulta puntual',
   otro: 'Orientación general',
 }

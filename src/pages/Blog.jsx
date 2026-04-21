@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react'
 import BlogCard from '../components/BlogCard'
+import SEO from '../components/SEO'
 import { Loader2 } from 'lucide-react'
 
 export default function Blog() {
   const [posts, setPosts]     = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(false)
-
-  useEffect(() => {
-    document.title = 'Blog — Fertilidad a Tu Lado'
-    return () => { document.title = 'Fertilidad a Tu Lado' }
-  }, [])
 
   useEffect(() => {
     fetch('/api/posts')
@@ -22,6 +18,11 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-cream pt-24 pb-20">
+      <SEO
+        title="Blog — Artículos sobre fertilidad y reproducción asistida"
+        description="Artículos claros y honestos sobre fertilidad, FIV, IA, ovodonación y todo lo que necesitas saber para afrontar tu proceso con información y confianza."
+        canonical="/blog"
+      />
       <div className="max-w-6xl mx-auto px-5">
         {/* Cabecera */}
         <div className="text-center mb-14">

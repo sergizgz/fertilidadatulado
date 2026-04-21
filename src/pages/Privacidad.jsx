@@ -1,13 +1,15 @@
 import { useEffect } from 'react'
+import SEO from '../components/SEO'
 
 export default function Privacidad() {
-  useEffect(() => {
-    document.title = 'Política de Privacidad — Fertilidad a Tu Lado'
-    window.scrollTo(0, 0)
-    return () => { document.title = 'Fertilidad a Tu Lado' }
-  }, [])
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="max-w-3xl mx-auto px-5 py-32">
+      <SEO
+        title="Política de Privacidad"
+        description="Política de privacidad de Fertilidad a Tu Lado — cómo tratamos tus datos personales conforme al RGPD y la LOPDGDD."
+        canonical="/privacidad"
+      />
       <h1 className="font-serif text-4xl text-[#2A2A2A] mb-8">Política de Privacidad</h1>
       <div className="space-y-6 text-[#6B6B6B] leading-relaxed text-sm">
         <p>De conformidad con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), te informamos sobre el tratamiento de tus datos personales.</p>

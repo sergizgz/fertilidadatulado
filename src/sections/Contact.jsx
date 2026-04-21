@@ -88,7 +88,7 @@ export default function Contact() {
                   >
                     <option value="">Selecciona una opción</option>
                     <option value="preconcepcion">Asesoría Preconcepción</option>
-                    <option value="fiv">Acompañamiento FIV/IAC</option>
+                    <option value="fiv">Acompañamiento FIV/IA</option>
                     <option value="consulta">Consulta Puntual</option>
                     <option value="otro">No sé, necesito orientación</option>
                   </select>

@@ -1,13 +1,15 @@
 import { useEffect } from 'react'
+import SEO from '../components/SEO'
 
 export default function Cookies() {
-  useEffect(() => {
-    document.title = 'Política de Cookies — Fertilidad a Tu Lado'
-    window.scrollTo(0, 0)
-    return () => { document.title = 'Fertilidad a Tu Lado' }
-  }, [])
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="max-w-3xl mx-auto px-5 py-32">
+      <SEO
+        title="Política de Cookies"
+        description="Política de cookies de Fertilidad a Tu Lado — qué cookies utilizamos, para qué y cómo puedes gestionarlas."
+        canonical="/cookies"
+      />
       <h1 className="font-serif text-4xl text-[#2A2A2A] mb-8">Política de Cookies</h1>
       <div className="space-y-6 text-[#6B6B6B] leading-relaxed text-sm">
         <p>Este sitio web utiliza cookies propias y de terceros para mejorar la experiencia de usuario y analizar el tráfico.</p>

@@ -10,7 +10,7 @@ const services = [
   },
   {
     icon: Heart,
-    title: 'Acompañamiento en FIV/IAC',
+    title: 'Acompañamiento en FIV/IA',
     description: 'Apoyo emocional y técnico durante todo tu tratamiento de reproducción asistida. Entenderás cada paso del protocolo, sin confusión ni miedo.',
     includes: ['Explicación del protocolo', 'Gestión emocional', 'Seguimiento semanal', 'Canal directo conmigo'],
     cta: 'Quiero acompañamiento',

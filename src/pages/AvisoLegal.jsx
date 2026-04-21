@@ -1,13 +1,15 @@
 import { useEffect } from 'react'
+import SEO from '../components/SEO'
 
 export default function AvisoLegal() {
-  useEffect(() => {
-    document.title = 'Aviso Legal — Fertilidad a Tu Lado'
-    window.scrollTo(0, 0)
-    return () => { document.title = 'Fertilidad a Tu Lado' }
-  }, [])
+  useEffect(() => { window.scrollTo(0, 0) }, [])
   return (
     <div className="max-w-3xl mx-auto px-5 py-32">
+      <SEO
+        title="Aviso Legal"
+        description="Aviso legal de Fertilidad a Tu Lado — información sobre la titular, condiciones de uso y propiedad intelectual del sitio."
+        canonical="/aviso-legal"
+      />
       <h1 className="font-serif text-4xl text-[#2A2A2A] mb-8">Aviso Legal</h1>
       <div className="prose prose-slate max-w-none space-y-6 text-[#6B6B6B] leading-relaxed text-sm">
         <p><strong className="text-[#2A2A2A]">Titular:</strong> Lidia [apellidos] · NIF: [NIF]</p>

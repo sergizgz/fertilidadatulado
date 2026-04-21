@@ -6,7 +6,7 @@ const LIDIA_PHOTO_PLACEHOLDER =
 
 const credentials = [
   'Enfermera especialista, +15 años en reproducción asistida',
-  'Experiencia en FIV, IAC, ovodonación y preservación de fertilidad',
+  'Experiencia en FIV, IA, ovodonación y preservación de fertilidad',
   'Acompañamiento emocional y técnico en cada fase del tratamiento',
   'Atención online: accesible desde donde estés',
 ]

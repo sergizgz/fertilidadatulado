@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Calendar, ArrowLeft, Loader2 } from 'lucide-react'
+import SEO from '../components/SEO'
 
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('es-ES', {
@@ -27,10 +28,6 @@ export default function BlogPost() {
       .finally(() => setLoading(false))
   }, [slug])
 
-  useEffect(() => {
-    if (post) document.title = `${post.title} — Fertilidad a Tu Lado`
-    return () => { document.title = 'Fertilidad a Tu Lado' }
-  }, [post])
 
   if (loading) return (
     <div className="min-h-screen bg-cream pt-24 flex items-center justify-center gap-2 text-[#9B9B9B]">
@@ -52,6 +49,13 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-cream pt-24 pb-20">
+      <SEO
+        title={post.title}
+        description={post.excerpt || `${post.title} — Artículo de Lidia, enfermera especialista en reproducción asistida.`}
+        canonical={`/blog/${post.slug}`}
+        type="article"
+        image={post.cover_image_url || undefined}
+      />
       <div className="max-w-3xl mx-auto px-5">
         {/* Volver */}
         <Link to="/blog"

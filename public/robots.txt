@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /privado
+Disallow: /api/
+
+Sitemap: https://fertilidadatulado.es/sitemap.xml
