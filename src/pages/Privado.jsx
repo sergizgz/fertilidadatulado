@@ -614,6 +614,106 @@ function ImageUploadCard({ label, settingKey, currentUrl, onUploaded }) {
   )
 }
 
+// Slider con etiqueta y valor
+function FilterSlider({ label, value, min, max, unit = '%', onChange }) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-xs text-[#6B6B6B]">{label}</span>
+        <span className="text-xs font-medium text-[#2A2A2A] tabular-nums">{value}{unit}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="w-full h-1.5 appearance-none rounded-full cursor-pointer accent-rose-accent"
+        style={{ background: `linear-gradient(to right, #C9788A ${((value - min) / (max - min)) * 100}%, #EDD5DC ${((value - min) / (max - min)) * 100}%)` }}
+      />
+    </div>
+  )
+}
+
+function HeroFiltersCard({ heroUrl, initialSettings, onSaved }) {
+  const [darkness, setDarkness] = useState(parseInt(initialSettings.hero_darkness ?? '45'))
+  const [rose,     setRose]     = useState(parseInt(initialSettings.hero_rose     ?? '35'))
+  const [posX,     setPosX]     = useState(parseInt(initialSettings.hero_pos_x    ?? '56'))
+  const [posY,     setPosY]     = useState(parseInt(initialSettings.hero_pos_y    ?? '42'))
+  const [saving,   setSaving]   = useState(false)
+  const [saved,    setSaved]    = useState(false)
+
+  // Sync when settings load for the first time
+  useEffect(() => {
+    if (initialSettings.hero_darkness) setDarkness(parseInt(initialSettings.hero_darkness))
+    if (initialSettings.hero_rose)     setRose(parseInt(initialSettings.hero_rose))
+    if (initialSettings.hero_pos_x)    setPosX(parseInt(initialSettings.hero_pos_x))
+    if (initialSettings.hero_pos_y)    setPosY(parseInt(initialSettings.hero_pos_y))
+  }, [initialSettings.hero_darkness, initialSettings.hero_rose, initialSettings.hero_pos_x, initialSettings.hero_pos_y])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(false)
+    const rows = [
+      { key: 'hero_darkness', value: String(darkness) },
+      { key: 'hero_rose',     value: String(rose) },
+      { key: 'hero_pos_x',    value: String(posX) },
+      { key: 'hero_pos_y',    value: String(posY) },
+    ]
+    const { error } = await supabase.from('site_settings').upsert(rows)
+    setSaving(false)
+    if (!error) { setSaved(true); onSaved({ darkness, rose, posX, posY }) }
+  }
+
+  const d = (darkness / 100).toFixed(2)
+  const r = (rose     / 100).toFixed(2)
+
+  return (
+    <div className="bg-white rounded-2xl border border-cream-darker/30 overflow-hidden">
+      {/* Mini preview en tiempo real */}
+      <div className="relative bg-cream-dark" style={{ aspectRatio: '16/7', maxHeight: 200, overflow: 'hidden' }}>
+        {heroUrl
+          ? <img src={heroUrl} alt="preview" className="w-full h-full object-cover" style={{ objectPosition: `${posX}% ${posY}%` }} />
+          : <div className="w-full h-full bg-gradient-to-br from-rose-accent to-rose-dark" />
+        }
+        {/* Overlays idénticos a los del Hero real */}
+        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${d})` }} />
+        <div className="absolute inset-0 bg-gradient-to-l from-black/55 via-black/15 to-transparent" />
+        <div className="absolute inset-0" style={{ background: `rgba(165,90,110,${r})` }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/45" />
+        <span className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">Vista previa en tiempo real</span>
+      </div>
+
+      <div className="p-5">
+        <p className="font-medium text-[#2A2A2A] text-sm mb-4">Filtros de la foto principal</p>
+        <div className="space-y-4">
+          <FilterSlider label="Oscuridad general" value={darkness} min={0} max={80} onChange={setDarkness} />
+          <FilterSlider label="Tono rosa"         value={rose}     min={0} max={60} onChange={setRose} />
+          <div className="pt-1 border-t border-cream-dark">
+            <p className="text-xs text-[#9B9B9B] mb-3">Foco de la imagen — mueve los sliders para reencuadrar la foto</p>
+            <div className="space-y-4">
+              <FilterSlider label="Posición horizontal" value={posX} min={0} max={100} onChange={setPosX} />
+              <FilterSlider label="Posición vertical"   value={posY} min={0} max={100} onChange={setPosY} />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 mt-5">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 bg-rose-accent hover:bg-rose-dark disabled:opacity-60 text-white text-sm font-medium px-5 py-2 rounded-full transition-colors"
+          >
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : 'Guardar filtros'}
+          </button>
+          {saved && (
+            <p className="flex items-center gap-1.5 text-green-600 text-xs">
+              <CheckCircle size={13} /> ¡Guardado! Los cambios ya son visibles en la web.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ImagesSection() {
   const [settings, setSettings] = useState({})
 
@@ -623,8 +723,9 @@ function ImagesSection() {
     })
   }, [])
 
-  const handleUploaded = (key, url) => {
-    setSettings(prev => ({ ...prev, [key]: url }))
+  const handleUploaded = (key, url) => setSettings(prev => ({ ...prev, [key]: url }))
+  const handleFilterSaved = ({ darkness, rose, posX, posY }) => {
+    setSettings(prev => ({ ...prev, hero_darkness: String(darkness), hero_rose: String(rose), hero_pos_x: String(posX), hero_pos_y: String(posY) }))
   }
 
   return (
@@ -632,21 +733,28 @@ function ImagesSection() {
       <div className="mb-6">
         <h2 className="font-serif text-xl text-[#2A2A2A]">Imágenes de la web</h2>
         <p className="text-sm text-[#9B9B9B] mt-1">
-          Sube una foto nueva para reemplazar la imagen actual. El cambio es inmediato.
+          Cambia las fotos y ajusta los filtros. Los cambios son inmediatos.
         </p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ImageUploadCard
-          label="Foto principal (Hero)"
-          settingKey="hero_image_url"
-          currentUrl={settings.hero_image_url}
-          onUploaded={(url) => handleUploaded('hero_image_url', url)}
-        />
-        <ImageUploadCard
-          label="Foto de Lidia (Sobre mí)"
-          settingKey="lidia_photo_url"
-          currentUrl={settings.lidia_photo_url}
-          onUploaded={(url) => handleUploaded('lidia_photo_url', url)}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ImageUploadCard
+            label="Foto principal (Hero)"
+            settingKey="hero_image_url"
+            currentUrl={settings.hero_image_url}
+            onUploaded={(url) => handleUploaded('hero_image_url', url)}
+          />
+          <ImageUploadCard
+            label="Foto de Lidia (Sobre mí)"
+            settingKey="lidia_photo_url"
+            currentUrl={settings.lidia_photo_url}
+            onUploaded={(url) => handleUploaded('lidia_photo_url', url)}
+          />
+        </div>
+        <HeroFiltersCard
+          heroUrl={settings.hero_image_url}
+          initialSettings={settings}
+          onSaved={handleFilterSaved}
         />
       </div>
     </div>

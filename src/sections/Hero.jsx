@@ -6,7 +6,11 @@ const HERO_IMAGE_FALLBACK =
 
 export default function Hero() {
   const { settings } = useSiteSettings()
-  const heroImage = settings.hero_image_url || HERO_IMAGE_FALLBACK
+  const heroImage  = settings.hero_image_url || HERO_IMAGE_FALLBACK
+  const darkness   = (parseInt(settings.hero_darkness  ?? '45') / 100).toFixed(2)
+  const rose       = (parseInt(settings.hero_rose      ?? '35') / 100).toFixed(2)
+  const posX       = settings.hero_pos_x ?? '56'
+  const posY       = settings.hero_pos_y ?? '42'
 
   const scrollToContact = () => {
     document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })
@@ -18,20 +22,19 @@ export default function Hero() {
       style={{
         backgroundImage: `url(${heroImage}), linear-gradient(135deg, #A55A6E 0%, #C9788A 38%, #E09AAA 72%, #F2C8D0 100%)`,
         backgroundSize: 'cover',
-        backgroundPosition: '56% 42%',
+        backgroundPosition: `${posX}% ${posY}%`,
         backgroundBlendMode: 'normal',
       }}
     >
-      {/*
-        Contraste: base oscura neutra + refuerzo hacia la derecha (sol / flare).
-        El velo rosa va solo como capa suave para marca, sin “lavar” la foto.
-      */}
-      <div className="absolute inset-0 bg-black/45" />
+      {/* Overlay oscuridad — controlado desde panel privado */}
+      <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${darkness})` }} />
+      {/* Gradiente lateral derecho */}
       <div className="absolute inset-0 bg-gradient-to-l from-black/55 via-black/15 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-rose-dark/35 via-rose-dark/10 to-transparent" />
+      {/* Tono rosa — controlado desde panel privado */}
+      <div className="absolute inset-0" style={{ background: `rgba(165,90,110,${rose})` }} />
+      {/* Gradiente vertical suave */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/45" />
 
-      {/* Contenido: pt generoso para no solapar el header fijo (h-16 / md:h-20) + aire sobre el badge */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full py-12 pb-28 pt-[calc(5.5rem+env(safe-area-inset-top))] md:py-16 md:pt-[calc(6.5rem+env(safe-area-inset-top))] md:pb-32 flex items-center justify-center min-h-screen text-center">
         <div className="max-w-3xl w-full flex flex-col items-center">
           {/* Badge */}
@@ -48,12 +51,10 @@ export default function Hero() {
             <span className="text-white">Con respuestas, no silencios.</span>
           </h1>
 
-          {/* Subtítulo */}
           <p className="text-white/95 text-base md:text-lg leading-relaxed mb-10 max-w-xl [text-shadow:0_2px_16px_rgba(0,0,0,0.65)]">
             Entender tu cuerpo es el primer paso para vivir la búsqueda de embarazo con más claridad y tranquilidad. Buscar un embarazo no debería vivirse a ciegas ni en soledad.
           </p>
 
-          {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
             <button
               onClick={scrollToContact}
@@ -71,7 +72,6 @@ export default function Hero() {
           </div>
         </div>
       </div>
-
     </section>
   )
 }
