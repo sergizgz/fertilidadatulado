@@ -85,6 +85,41 @@ function exportXLSX(data) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Modal de confirmación genérico
+// ─────────────────────────────────────────────────────────────────────────────
+function ConfirmDeleteModal({ message, onConfirm, onCancel, loading }) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+            <Trash2 size={18} className="text-red-500" />
+          </div>
+          <h4 className="font-serif text-lg text-[#2A2A2A]">¿Eliminar registro?</h4>
+        </div>
+        <p className="text-sm text-[#6B6B6B] mb-6 leading-relaxed">{message}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-full transition-colors"
+          >
+            {loading ? <><Loader2 size={14} className="animate-spin" /> Eliminando...</> : 'Sí, eliminar'}
+          </button>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="flex-1 bg-cream-dark hover:bg-cream-darker text-[#2A2A2A] text-sm font-medium py-2.5 rounded-full transition-colors"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Login
 // ─────────────────────────────────────────────────────────────────────────────
 function LoginForm({ onLogin }) {
@@ -239,7 +274,7 @@ function StatsSection({ submissions, subscriberCount }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Sección: Solicitudes (tabla)
 // ─────────────────────────────────────────────────────────────────────────────
-function SubmissionsSection({ submissions, onUpdate, token }) {
+function SubmissionsSection({ submissions, onUpdate, onDelete, token }) {
   const [search, setSearch]           = useState('')
   const [sortField, setSortField]     = useState('created_at')
   const [sortDir, setSortDir]         = useState('desc')
@@ -247,7 +282,22 @@ function SubmissionsSection({ submissions, onUpdate, token }) {
   const [serviceFilter, setServiceFilter] = useState('')
   const [statusFilter, setStatusFilter]   = useState('')
   const [savingId, setSavingId]       = useState(null)
-  const [notesDraft, setNotesDraft]   = useState({}) // { [id]: string }
+  const [notesDraft, setNotesDraft]   = useState({})
+  const [deleteTarget, setDeleteTarget] = useState(null) // { id, name }
+  const [deleting, setDeleting]       = useState(false)
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    await fetch('/api/delete-submission', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: deleteTarget.id }),
+    })
+    onDelete(deleteTarget.id)
+    setDeleting(false)
+    setDeleteTarget(null)
+  }
 
   const toggleSort = (field) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -409,11 +459,20 @@ function SubmissionsSection({ submissions, onUpdate, token }) {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <a href={`mailto:${s.email}?subject=Re: Tu consulta en Fertilidad a Tu Lado`}
-                            onClick={e => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-xs text-rose-accent hover:text-rose-dark font-medium whitespace-nowrap">
-                            <ExternalLink size={12} /> Responder
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a href={`mailto:${s.email}?subject=Re: Tu consulta en Fertilidad a Tu Lado`}
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs text-rose-accent hover:text-rose-dark font-medium whitespace-nowrap">
+                              <ExternalLink size={12} /> Responder
+                            </a>
+                            <button
+                              onClick={e => { e.stopPropagation(); setDeleteTarget({ id: s.id, name: s.name }) }}
+                              className="p-1 rounded-lg text-[#C0C0C0] hover:text-red-400 hover:bg-red-50 transition-colors"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
 
@@ -465,6 +524,15 @@ function SubmissionsSection({ submissions, onUpdate, token }) {
             </table>
           </div>
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          message={`Se eliminará la solicitud de "${deleteTarget.name}" de forma permanente. Esta acción no se puede deshacer.`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting}
+        />
       )}
     </div>
   )
@@ -1100,6 +1168,21 @@ function SubscribersSection({ token }) {
   const [loading, setLoading]         = useState(true)
   const [search, setSearch]           = useState('')
   const [sortDir, setSortDir]         = useState('desc')
+  const [deleteTarget, setDeleteTarget] = useState(null) // { id, email }
+  const [deleting, setDeleting]         = useState(false)
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    await fetch('/api/delete-subscriber', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: deleteTarget.id }),
+    })
+    setSubscribers(prev => prev.filter(s => s.id !== deleteTarget.id))
+    setDeleting(false)
+    setDeleteTarget(null)
+  }
 
   useEffect(() => {
     fetch('/api/subscribers', {
@@ -1217,12 +1300,21 @@ function SubscribersSection({ token }) {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <a
-                        href={`mailto:${s.email}`}
-                        className="inline-flex items-center gap-1 text-xs text-rose-accent hover:text-rose-dark font-medium whitespace-nowrap"
-                      >
-                        <ExternalLink size={12} /> Escribir
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`mailto:${s.email}`}
+                          className="inline-flex items-center gap-1 text-xs text-rose-accent hover:text-rose-dark font-medium whitespace-nowrap"
+                        >
+                          <ExternalLink size={12} /> Escribir
+                        </a>
+                        <button
+                          onClick={() => setDeleteTarget({ id: s.id, email: s.email })}
+                          className="p-1 rounded-lg text-[#C0C0C0] hover:text-red-400 hover:bg-red-50 transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1234,6 +1326,15 @@ function SubscribersSection({ token }) {
             {search && ` · filtrando de ${subscribers.length} total`}
           </div>
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          message={`Se eliminará el suscriptor "${deleteTarget.email}" de forma permanente. Esta acción no se puede deshacer.`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting}
+        />
       )}
     </div>
   )
@@ -1627,6 +1728,10 @@ function Dashboard({ session, onLogout }) {
     setSubmissions(prev => prev.map(s => s.id === updated.id ? updated : s))
   }, [])
 
+  const handleDeleteSubmission = useCallback((id) => {
+    setSubmissions(prev => prev.filter(s => s.id !== id))
+  }, [])
+
   const NavItem = ({ item }) => (
     <button
       onClick={() => { setActiveSection(item.id); setSidebarOpen(false) }}
@@ -1705,6 +1810,7 @@ function Dashboard({ session, onLogout }) {
                 <SubmissionsSection
                   submissions={submissions}
                   onUpdate={handleUpdate}
+                  onDelete={handleDeleteSubmission}
                   token={session.access_token}
                 />
               )}
