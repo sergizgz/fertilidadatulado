@@ -1221,12 +1221,197 @@ function SubscribersSection({ token }) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Sección: Biografía
+// ─────────────────────────────────────────────────────────────────────────────
+function BiographySection() {
+  const [paragraphs, setParagraphs] = useState(['', '', ''])
+  const [credentials, setCredentials] = useState([''])
+  const [years, setYears] = useState('15')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    supabase.from('site_settings').select('key, value')
+      .in('key', ['bio_paragraphs', 'bio_credentials', 'bio_years'])
+      .then(({ data }) => {
+        if (!data) return
+        const map = Object.fromEntries(data.map(r => [r.key, r.value]))
+        if (map.bio_years) setYears(map.bio_years)
+        try {
+          const p = map.bio_paragraphs ? JSON.parse(map.bio_paragraphs) : null
+          if (Array.isArray(p) && p.length) setParagraphs(p)
+          else setParagraphs([
+            'Llevo más de 15 años trabajando en unidades de reproducción asistida, especialmente desde el área de enfermería reproductiva. He estado muy cerca de miles de procesos: tratamientos, decisiones, esperas… y, sobre todo, del impacto emocional que conllevan. Y si hay algo que he aprendido, es que la información —clara, honesta y bien explicada— marca una diferencia enorme.',
+            'Durante años viví todo esto desde el lado clínico. Pero en 2022 me convertí en madre, y tiempo después volví a serlo. Esa experiencia transformó por completo mi forma de entender este proceso. Porque cuando eres tú quien desea con todas sus fuerzas, quien espera, quien duda… todo se vive de una manera muy distinta.',
+            'En primera persona entendí la incertidumbre, la necesidad de respuestas claras y lo difícil que es, a veces, no tener a quién acudir. Por eso decidí dar un paso más: acompañar desde un lugar diferente, donde puedas preguntar sin miedo y no tengas que sentirte sola en tu proceso.',
+          ])
+        } catch { /**/ }
+        try {
+          const c = map.bio_credentials ? JSON.parse(map.bio_credentials) : null
+          if (Array.isArray(c) && c.length) setCredentials(c)
+          else setCredentials([
+            'Enfermera especialista, +15 años en reproducción asistida',
+            'Experiencia en FIV, IA, ovodonación y preservación de fertilidad',
+            'Acompañamiento emocional y técnico en cada fase del tratamiento',
+            'Atención online: accesible desde donde estés',
+          ])
+        } catch { /**/ }
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false); setError('')
+    const rows = [
+      { key: 'bio_paragraphs',  value: JSON.stringify(paragraphs.filter(p => p.trim())) },
+      { key: 'bio_credentials', value: JSON.stringify(credentials.filter(c => c.trim())) },
+      { key: 'bio_years',       value: years.trim() || '15' },
+    ]
+    const { error: err } = await supabase.from('site_settings').upsert(rows)
+    setSaving(false)
+    if (err) setError(err.message)
+    else setSaved(true)
+  }
+
+  const editParagraph = (i, v) => setParagraphs(ps => ps.map((p, j) => j === i ? v : p))
+  const addParagraph = () => setParagraphs(ps => [...ps, ''])
+  const removeParagraph = (i) => setParagraphs(ps => ps.filter((_, j) => j !== i))
+
+  const editCredential = (i, v) => setCredentials(cs => cs.map((c, j) => j === i ? v : c))
+  const addCredential = () => setCredentials(cs => [...cs, ''])
+  const removeCredential = (i) => setCredentials(cs => cs.filter((_, j) => j !== i))
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm">
+      <Loader2 size={18} className="animate-spin mr-2" /> Cargando...
+    </div>
+  )
+
+  return (
+    <div className="space-y-8 max-w-3xl">
+      <div>
+        <h2 className="font-serif text-xl text-[#2A2A2A]">Biografía</h2>
+        <p className="text-sm text-[#9B9B9B] mt-1">Edita el texto y los puntos destacados de la sección «Sobre mí».</p>
+      </div>
+
+      {/* Badge años */}
+      <div className="bg-white rounded-2xl border border-cream-darker/30 p-6">
+        <h3 className="font-medium text-[#2A2A2A] text-sm mb-4 flex items-center gap-2">
+          <Star size={15} className="text-rose-accent" /> Badge de experiencia
+        </h3>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-[#6B6B6B]">+</span>
+          <input
+            type="number" min="1" max="50" value={years}
+            onChange={e => setYears(e.target.value)}
+            className="w-20 border border-cream-darker rounded-xl px-3 py-2 text-sm text-center font-medium text-[#2A2A2A] focus:outline-none focus:border-rose-accent"
+          />
+          <span className="text-sm text-[#6B6B6B]">años en reproducción asistida</span>
+          <div className="ml-2 bg-white border border-cream-darker/40 rounded-xl shadow-sm px-4 py-2 text-center">
+            <p className="font-serif text-lg font-semibold text-rose-accent">+{years || '15'}</p>
+            <p className="text-xs text-[#6B6B6B] leading-tight">años en<br/>rep. asistida</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Párrafos */}
+      <div className="bg-white rounded-2xl border border-cream-darker/30 p-6">
+        <h3 className="font-medium text-[#2A2A2A] text-sm mb-1 flex items-center gap-2">
+          <MessageSquare size={15} className="text-rose-accent" /> Texto de presentación
+        </h3>
+        <p className="text-xs text-[#9B9B9B] mb-4">Cada bloque es un párrafo independiente en la web.</p>
+        <div className="space-y-4">
+          {paragraphs.map((p, i) => (
+            <div key={i} className="relative group">
+              <div className="flex items-start gap-2">
+                <span className="mt-3 text-xs text-[#C0C0C0] w-5 shrink-0 text-center">{i + 1}</span>
+                <textarea
+                  rows={4}
+                  value={p}
+                  onChange={e => editParagraph(i, e.target.value)}
+                  placeholder={`Párrafo ${i + 1}...`}
+                  className="flex-1 border border-cream-darker/50 rounded-xl px-4 py-3 text-sm text-[#2A2A2A] leading-relaxed focus:outline-none focus:border-rose-accent resize-none transition-colors"
+                />
+                {paragraphs.length > 1 && (
+                  <button onClick={() => removeParagraph(i)} className="mt-3 p-1.5 text-[#C0C0C0] hover:text-red-400 transition-colors">
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={addParagraph}
+            className="flex items-center gap-1.5 text-xs text-rose-accent hover:text-rose-dark font-medium"
+          >
+            <Plus size={13} /> Añadir párrafo
+          </button>
+        </div>
+      </div>
+
+      {/* Credenciales / hitos CV */}
+      <div className="bg-white rounded-2xl border border-cream-darker/30 p-6">
+        <h3 className="font-medium text-[#2A2A2A] text-sm mb-1 flex items-center gap-2">
+          <CheckCircle2 size={15} className="text-rose-accent" /> Puntos destacados del CV
+        </h3>
+        <p className="text-xs text-[#9B9B9B] mb-4">Aparecen como lista de ✓ debajo del texto.</p>
+        <div className="space-y-2">
+          {credentials.map((c, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <CheckCircle size={14} className="text-rose-accent shrink-0" />
+              <input
+                type="text"
+                value={c}
+                onChange={e => editCredential(i, e.target.value)}
+                placeholder={`Punto ${i + 1}...`}
+                className="flex-1 border border-cream-darker/50 rounded-xl px-4 py-2 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent"
+              />
+              {credentials.length > 1 && (
+                <button onClick={() => removeCredential(i)} className="p-1.5 text-[#C0C0C0] hover:text-red-400 transition-colors">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={addCredential}
+            className="flex items-center gap-1.5 text-xs text-rose-accent hover:text-rose-dark font-medium mt-1"
+          >
+            <Plus size={13} /> Añadir punto
+          </button>
+        </div>
+      </div>
+
+      {/* Guardar */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 bg-rose-accent hover:bg-rose-dark disabled:opacity-60 text-white text-sm font-medium px-6 py-2.5 rounded-full transition-colors"
+        >
+          {saving ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : 'Guardar cambios'}
+        </button>
+        {saved && (
+          <p className="flex items-center gap-1.5 text-green-600 text-xs">
+            <CheckCircle size={13} /> ¡Guardado! Los cambios ya son visibles en la web.
+          </p>
+        )}
+        {error && <p className="text-red-500 text-xs">{error}</p>}
+      </div>
+    </div>
+  )
+}
+
 const NAV_ITEMS = [
   { id: 'stats',       label: 'Resumen',      icon: LayoutDashboard },
   { id: 'submissions', label: 'Solicitudes',  icon: Mail },
   { id: 'subscribers', label: 'Suscriptores', icon: Users },
   { id: 'blog',        label: 'Blog',         icon: BookOpen },
   { id: 'services',    label: 'Servicios',    icon: Layers },
+  { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
   { id: 'images',      label: 'Imágenes',     icon: ImageIcon },
 ]
 
@@ -1338,6 +1523,7 @@ function Dashboard({ session, onLogout }) {
                 <BlogSection token={session.access_token} />
               )}
               {activeSection === 'services' && <ServicesSection />}
+              {activeSection === 'biography' && <BiographySection />}
               {activeSection === 'images' && <ImagesSection />}
             </>
           )}
