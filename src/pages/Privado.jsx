@@ -805,53 +805,6 @@ function HeroFiltersCard({ heroUrl, initialSettings, onSaved }) {
   )
 }
 
-function ImagesSection() {
-  const [settings, setSettings] = useState({})
-
-  useEffect(() => {
-    supabase.from('site_settings').select('key, value').then(({ data }) => {
-      if (data) setSettings(Object.fromEntries(data.map(r => [r.key, r.value])))
-    })
-  }, [])
-
-  const handleUploaded = (key, url) => setSettings(prev => ({ ...prev, [key]: url }))
-  const handleFilterSaved = ({ darkness, rose, posX, posY }) => {
-    setSettings(prev => ({ ...prev, hero_darkness: String(darkness), hero_rose: String(rose), hero_pos_x: String(posX), hero_pos_y: String(posY) }))
-  }
-
-  return (
-    <div>
-      <div className="mb-6">
-        <h2 className="font-serif text-xl text-[#2A2A2A]">Imágenes de la web</h2>
-        <p className="text-sm text-[#9B9B9B] mt-1">
-          Cambia las fotos y ajusta los filtros. Los cambios son inmediatos.
-        </p>
-      </div>
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ImageUploadCard
-            label="Foto principal (Hero)"
-            settingKey="hero_image_url"
-            currentUrl={settings.hero_image_url}
-            onUploaded={(url) => handleUploaded('hero_image_url', url)}
-          />
-          <ImageUploadCard
-            label="Foto de Lidia (Sobre mí)"
-            settingKey="lidia_photo_url"
-            currentUrl={settings.lidia_photo_url}
-            onUploaded={(url) => handleUploaded('lidia_photo_url', url)}
-          />
-        </div>
-        <HeroFiltersCard
-          heroUrl={settings.hero_image_url}
-          initialSettings={settings}
-          onSaved={handleFilterSaved}
-        />
-      </div>
-    </div>
-  )
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Sección: Servicios
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1375,22 +1328,27 @@ const HERO_MULTILINE = ['hero_subtitle']
 const HERO_VISIBILITY_DEFAULTS = Object.fromEntries(HERO_VISIBILITY_KEYS.map(k => [k, '1']))
 
 function PortadaSection() {
-  const [form, setForm]       = useState({ ...HERO_DEFAULTS, ...HERO_VISIBILITY_DEFAULTS })
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving]   = useState(false)
-  const [saved, setSaved]     = useState(false)
-  const [error, setError]     = useState('')
+  const [form, setForm]             = useState({ ...HERO_DEFAULTS, ...HERO_VISIBILITY_DEFAULTS })
+  const [loading, setLoading]       = useState(true)
+  const [saving, setSaving]         = useState(false)
+  const [saved, setSaved]           = useState(false)
+  const [error, setError]           = useState('')
+  const [imgSettings, setImgSettings] = useState({})
 
   useEffect(() => {
-    supabase.from('site_settings').select('key, value')
-      .in('key', ALL_HERO_KEYS)
-      .then(({ data }) => {
-        if (data) {
-          const map = Object.fromEntries(data.map(r => [r.key, r.value]))
-          setForm(f => ({ ...f, ...map }))
-        }
-      })
-      .finally(() => setLoading(false))
+    const IMAGE_KEYS = ['hero_image_url', 'hero_darkness', 'hero_rose', 'hero_pos_x', 'hero_pos_y']
+    Promise.all([
+      supabase.from('site_settings').select('key, value').in('key', ALL_HERO_KEYS),
+      supabase.from('site_settings').select('key, value').in('key', IMAGE_KEYS),
+    ]).then(([textRes, imgRes]) => {
+      if (textRes.data) {
+        const map = Object.fromEntries(textRes.data.map(r => [r.key, r.value]))
+        setForm(f => ({ ...f, ...map }))
+      }
+      if (imgRes.data) {
+        setImgSettings(Object.fromEntries(imgRes.data.map(r => [r.key, r.value])))
+      }
+    }).finally(() => setLoading(false))
   }, [])
 
   const handleSave = async () => {
@@ -1491,7 +1449,7 @@ function PortadaSection() {
         </div>
       ))}
 
-      {/* Guardar */}
+      {/* Guardar textos */}
       <div className="flex items-center gap-4">
         <button
           onClick={handleSave}
@@ -1506,6 +1464,27 @@ function PortadaSection() {
           </p>
         )}
         {error && <p className="text-red-500 text-xs">{error}</p>}
+      </div>
+
+      {/* Foto e imagen */}
+      <div className="border-t border-cream-darker/20 pt-8 space-y-6">
+        <div>
+          <h3 className="font-medium text-[#2A2A2A] text-sm mb-1">Foto de portada</h3>
+          <p className="text-xs text-[#9B9B9B] mb-4">Cambia la imagen de fondo y ajusta sus filtros.</p>
+        </div>
+        <ImageUploadCard
+          label="Foto principal (Portada)"
+          settingKey="hero_image_url"
+          currentUrl={imgSettings.hero_image_url}
+          onUploaded={(url) => setImgSettings(prev => ({ ...prev, hero_image_url: url }))}
+        />
+        <HeroFiltersCard
+          heroUrl={imgSettings.hero_image_url}
+          initialSettings={imgSettings}
+          onSaved={({ darkness, rose, posX, posY }) =>
+            setImgSettings(prev => ({ ...prev, hero_darkness: String(darkness), hero_rose: String(rose), hero_pos_x: String(posX), hero_pos_y: String(posY) }))
+          }
+        />
       </div>
     </div>
   )
@@ -1522,10 +1501,11 @@ function BiographySection() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [lidiaPhotoUrl, setLidiaPhotoUrl] = useState('')
 
   useEffect(() => {
     supabase.from('site_settings').select('key, value')
-      .in('key', ['bio_paragraphs', 'bio_credentials', 'bio_years'])
+      .in('key', ['bio_paragraphs', 'bio_credentials', 'bio_years', 'lidia_photo_url'])
       .then(({ data }) => {
         if (!data) return
         const map = Object.fromEntries(data.map(r => [r.key, r.value]))
@@ -1549,6 +1529,7 @@ function BiographySection() {
             'Atención online: accesible desde donde estés',
           ])
         } catch { /**/ }
+        if (map.lidia_photo_url) setLidiaPhotoUrl(map.lidia_photo_url)
       })
       .finally(() => setLoading(false))
   }, [])
@@ -1675,7 +1656,7 @@ function BiographySection() {
         </div>
       </div>
 
-      {/* Guardar */}
+      {/* Guardar textos */}
       <div className="flex items-center gap-4">
         <button
           onClick={handleSave}
@@ -1691,6 +1672,20 @@ function BiographySection() {
         )}
         {error && <p className="text-red-500 text-xs">{error}</p>}
       </div>
+
+      {/* Foto de Lidia */}
+      <div className="border-t border-cream-darker/20 pt-8">
+        <div className="mb-4">
+          <h3 className="font-medium text-[#2A2A2A] text-sm mb-1">Foto de Lidia</h3>
+          <p className="text-xs text-[#9B9B9B]">Aparece en la sección «Sobre mí» de la web.</p>
+        </div>
+        <ImageUploadCard
+          label="Foto de Lidia (Sobre mí)"
+          settingKey="lidia_photo_url"
+          currentUrl={lidiaPhotoUrl}
+          onUploaded={(url) => setLidiaPhotoUrl(url)}
+        />
+      </div>
     </div>
   )
 }
@@ -1703,7 +1698,6 @@ const NAV_ITEMS = [
   { id: 'services',    label: 'Servicios',    icon: Layers },
   { id: 'portada',     label: 'Portada',      icon: Sun },
   { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
-  { id: 'images',      label: 'Imágenes',     icon: ImageIcon },
 ]
 
 function Dashboard({ session, onLogout }) {
@@ -1821,7 +1815,6 @@ function Dashboard({ session, onLogout }) {
               {activeSection === 'services' && <ServicesSection />}
               {activeSection === 'portada' && <PortadaSection />}
               {activeSection === 'biography' && <BiographySection />}
-              {activeSection === 'images' && <ImagesSection />}
             </>
           )}
         </main>
