@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
@@ -1701,12 +1701,39 @@ const NAV_ITEMS = [
   { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
 ]
 
+const INACTIVITY_LIMIT = 2 * 60 * 60 * 1000  // 2 horas sin actividad → cierre automático
+const WARNING_BEFORE   = 5 * 60 * 1000        // aviso 5 minutos antes
+
 function Dashboard({ session, onLogout }) {
   const [activeSection, setActiveSection] = useState('stats')
   const [submissions, setSubmissions] = useState([])
   const [subscriberCount, setSubscriberCount] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sessionWarning, setSessionWarning] = useState(false)
+  const inactivityTimer = useRef(null)
+  const warningTimer    = useRef(null)
+
+  // ── Auto-logout por inactividad ────────────────────────────────────────────
+  useEffect(() => {
+    const reset = () => {
+      setSessionWarning(false)
+      clearTimeout(inactivityTimer.current)
+      clearTimeout(warningTimer.current)
+      warningTimer.current    = setTimeout(() => setSessionWarning(true),  INACTIVITY_LIMIT - WARNING_BEFORE)
+      inactivityTimer.current = setTimeout(() => supabase.auth.signOut(),  INACTIVITY_LIMIT)
+    }
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+    events.forEach(e => document.addEventListener(e, reset, { passive: true }))
+    reset() // arranca el timer al montar
+
+    return () => {
+      events.forEach(e => document.removeEventListener(e, reset))
+      clearTimeout(inactivityTimer.current)
+      clearTimeout(warningTimer.current)
+    }
+  }, [])
 
   useEffect(() => {
     const headers = { Authorization: `Bearer ${session.access_token}` }
@@ -1742,6 +1769,24 @@ function Dashboard({ session, onLogout }) {
 
   return (
     <div className="min-h-screen bg-[#F5F0F1] flex">
+
+      {/* Aviso de sesión a punto de caducar */}
+      {sessionWarning && (
+        <div className="fixed top-4 right-4 z-50 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 shadow-lg flex items-center gap-4 max-w-sm">
+          <Clock size={18} className="text-amber-500 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-800">Sesión a punto de caducar</p>
+            <p className="text-xs text-amber-600 mt-0.5">En 5 minutos se cerrará por inactividad.</p>
+          </div>
+          <button
+            onClick={() => setSessionWarning(false)}
+            className="text-amber-400 hover:text-amber-600"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Sidebar desktop */}
       <aside className="hidden md:flex w-56 shrink-0 flex-col bg-white border-r border-cream-darker/30 p-4">
         <div className="mb-6 px-2 pt-2">
