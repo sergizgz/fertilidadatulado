@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabase'
 import * as XLSX from 'xlsx'
 import {
@@ -1839,6 +1840,22 @@ export default function Privado() {
   }, [])
 
   if (checking) return <div className="min-h-screen bg-cream flex items-center justify-center text-[#9B9B9B] text-sm">...</div>
-  if (!session) return <LoginForm onLogin={() => supabase.auth.getSession().then(({ data: { session } }) => setSession(session))} />
-  return <Dashboard session={session} onLogout={() => supabase.auth.signOut()} />
+  if (!session) return (
+    <>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>Área privada — Fertilidad a Tu Lado</title>
+      </Helmet>
+      <LoginForm onLogin={() => supabase.auth.getSession().then(({ data: { session } }) => setSession(session))} />
+    </>
+  )
+  return (
+    <>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+        <title>Panel — Fertilidad a Tu Lado</title>
+      </Helmet>
+      <Dashboard session={session} onLogout={() => supabase.auth.signOut()} />
+    </>
+  )
 }
