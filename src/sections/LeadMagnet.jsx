@@ -240,7 +240,7 @@ export default function LeadMagnet() {
                   </p>
                   <a
                     href={pdfUrl}
-                    download="Por-que-no-te-quedas-embarazada-Lidia.pdf"
+                    download="Ebook porque no te quedas embarazada.pdf"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-all duration-200 hover:opacity-90 active:scale-95"
                     style={{
                       background: 'linear-gradient(135deg, #F2C8D0, #E09AAA)',
