@@ -1236,6 +1236,8 @@ const HERO_DEFAULTS = {
 }
 
 const HERO_KEYS = Object.keys(HERO_DEFAULTS)
+const HERO_VISIBILITY_KEYS = HERO_KEYS.map(k => `${k}_visible`)
+const ALL_HERO_KEYS = [...HERO_KEYS, ...HERO_VISIBILITY_KEYS]
 
 const HERO_LABELS = {
   hero_badge:         'Etiqueta del badge superior',
@@ -1250,8 +1252,11 @@ const HERO_LABELS = {
 
 const HERO_MULTILINE = ['hero_subtitle']
 
+// Visibilidad inicial: todo visible ('1')
+const HERO_VISIBILITY_DEFAULTS = Object.fromEntries(HERO_VISIBILITY_KEYS.map(k => [k, '1']))
+
 function PortadaSection() {
-  const [form, setForm]     = useState({ ...HERO_DEFAULTS })
+  const [form, setForm]       = useState({ ...HERO_DEFAULTS, ...HERO_VISIBILITY_DEFAULTS })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
   const [saved, setSaved]     = useState(false)
@@ -1259,7 +1264,7 @@ function PortadaSection() {
 
   useEffect(() => {
     supabase.from('site_settings').select('key, value')
-      .in('key', HERO_KEYS)
+      .in('key', ALL_HERO_KEYS)
       .then(({ data }) => {
         if (data) {
           const map = Object.fromEntries(data.map(r => [r.key, r.value]))
@@ -1271,7 +1276,10 @@ function PortadaSection() {
 
   const handleSave = async () => {
     setSaving(true); setSaved(false); setError('')
-    const rows = HERO_KEYS.map(key => ({ key, value: form[key] || HERO_DEFAULTS[key] }))
+    const rows = [
+      ...HERO_KEYS.map(key => ({ key, value: form[key] || HERO_DEFAULTS[key] })),
+      ...HERO_VISIBILITY_KEYS.map(key => ({ key, value: form[key] ?? '1' })),
+    ]
     const { error: err } = await supabase.from('site_settings').upsert(rows)
     setSaving(false)
     if (err) setError(err.message)
@@ -1279,6 +1287,9 @@ function PortadaSection() {
   }
 
   const handleReset = (key) => setForm(f => ({ ...f, [key]: HERO_DEFAULTS[key] }))
+  const isVisible   = (key) => form[`${key}_visible`] !== '0'
+  const toggleVisible = (key) =>
+    setForm(f => ({ ...f, [`${key}_visible`]: f[`${key}_visible`] === '0' ? '1' : '0' }))
 
   if (loading) return (
     <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm">
@@ -1304,39 +1315,59 @@ function PortadaSection() {
         <div key={title} className="bg-white rounded-2xl border border-cream-darker/30 p-6">
           <h3 className="font-medium text-[#2A2A2A] text-sm mb-4">{title}</h3>
           <div className="space-y-4">
-            {keys.map(key => (
-              <div key={key}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-medium text-[#6B6B6B]">{HERO_LABELS[key]}</label>
-                  {form[key] !== HERO_DEFAULTS[key] && (
-                    <button
-                      onClick={() => handleReset(key)}
-                      className="text-xs text-[#9B9B9B] hover:text-rose-accent transition-colors"
-                    >
-                      ↩ Restaurar original
-                    </button>
+            {keys.map(key => {
+              const shown = isVisible(key)
+              return (
+                <div key={key} className={`transition-opacity ${shown ? '' : 'opacity-50'}`}>
+                  <div className="flex items-center justify-between mb-1.5 gap-2">
+                    <label className="text-xs font-medium text-[#6B6B6B] flex-1">{HERO_LABELS[key]}</label>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {form[key] !== HERO_DEFAULTS[key] && shown && (
+                        <button
+                          onClick={() => handleReset(key)}
+                          className="text-xs text-[#9B9B9B] hover:text-rose-accent transition-colors"
+                        >
+                          ↩ Restaurar
+                        </button>
+                      )}
+                      {/* Toggle visible/oculto */}
+                      <button
+                        onClick={() => toggleVisible(key)}
+                        title={shown ? 'Ocultar en la web' : 'Mostrar en la web'}
+                        className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border transition-all ${
+                          shown
+                            ? 'border-green-200 bg-green-50 text-green-600 hover:bg-green-100'
+                            : 'border-cream-darker bg-cream-dark text-[#9B9B9B] hover:bg-cream-darker'
+                        }`}
+                      >
+                        {shown ? <Eye size={12} /> : <EyeOff size={12} />}
+                        {shown ? 'Visible' : 'Oculto'}
+                      </button>
+                    </div>
+                  </div>
+                  {HERO_MULTILINE.includes(key) ? (
+                    <textarea
+                      rows={3}
+                      value={form[key]}
+                      disabled={!shown}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full border border-cream-darker/50 rounded-xl px-4 py-3 text-sm text-[#2A2A2A] leading-relaxed focus:outline-none focus:border-rose-accent resize-none transition-colors disabled:bg-cream/50 disabled:cursor-not-allowed"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={form[key]}
+                      disabled={!shown}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full border border-cream-darker/50 rounded-xl px-4 py-2.5 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent transition-colors disabled:bg-cream/50 disabled:cursor-not-allowed"
+                    />
+                  )}
+                  {key === 'hero_title_2' && shown && (
+                    <p className="text-xs text-[#9B9B9B] mt-1">Esta línea aparece en rosa y en cursiva en la web.</p>
                   )}
                 </div>
-                {HERO_MULTILINE.includes(key) ? (
-                  <textarea
-                    rows={3}
-                    value={form[key]}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                    className="w-full border border-cream-darker/50 rounded-xl px-4 py-3 text-sm text-[#2A2A2A] leading-relaxed focus:outline-none focus:border-rose-accent resize-none transition-colors"
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    value={form[key]}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                    className="w-full border border-cream-darker/50 rounded-xl px-4 py-2.5 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent transition-colors"
-                  />
-                )}
-                {key === 'hero_title_2' && (
-                  <p className="text-xs text-[#9B9B9B] mt-1">Esta línea aparece en rosa y en cursiva en la web.</p>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ))}

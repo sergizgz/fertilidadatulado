@@ -19,6 +19,11 @@ function t(settings, key) {
   return settings[key] || HERO_DEFAULTS[key]
 }
 
+// Devuelve true si el elemento está visible (por defecto sí, salvo que sea explícitamente '0')
+function visible(settings, key) {
+  return settings[`${key}_visible`] !== '0'
+}
+
 export default function Hero() {
   const { settings, loading } = useSiteSettings()
 
@@ -31,6 +36,16 @@ export default function Hero() {
   const scrollToContact = () => {
     document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  // Líneas del título visibles
+  const titleLines = [
+    { key: 'hero_title_1', className: 'text-white' },
+    { key: 'hero_title_2', className: 'text-rose-soft [text-shadow:0_2px_24px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.5)]' },
+    { key: 'hero_title_3', className: 'text-white' },
+  ].filter(l => visible(settings, l.key))
+
+  const showCtaPrimary   = visible(settings, 'hero_cta_primary')
+  const showCtaSecondary = visible(settings, 'hero_cta_secondary')
 
   return (
     <section
@@ -51,50 +66,70 @@ export default function Hero() {
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 w-full py-12 pb-28 pt-[calc(5.5rem+env(safe-area-inset-top))] md:py-16 md:pt-[calc(6.5rem+env(safe-area-inset-top))] md:pb-32 flex items-center justify-center min-h-screen text-center">
         <div className="max-w-3xl w-full flex flex-col items-center">
+
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-black/35 backdrop-blur-sm border border-white/25 rounded-full px-4 py-1.5 mb-6 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
-            <Heart size={13} className="text-rose-soft fill-rose-soft" />
-            <span className="text-sm font-medium text-white">{t(settings, 'hero_badge')}</span>
-          </div>
+          {visible(settings, 'hero_badge') && (
+            <div className="inline-flex items-center gap-2 bg-black/35 backdrop-blur-sm border border-white/25 rounded-full px-4 py-1.5 mb-6 shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
+              <Heart size={13} className="text-rose-soft fill-rose-soft" />
+              <span className="text-sm font-medium text-white">{t(settings, 'hero_badge')}</span>
+            </div>
+          )}
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 [text-shadow:0_2px_28px_rgba(0,0,0,0.75),0_1px_4px_rgba(0,0,0,0.9)]">
-            <span className="text-white">{t(settings, 'hero_title_1')}</span>
-            <br />
-            <span className="text-rose-soft [text-shadow:0_2px_24px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.5)]">{t(settings, 'hero_title_2')}</span>
-            <br />
-            <span className="text-white">{t(settings, 'hero_title_3')}</span>
-          </h1>
+          {/* Título */}
+          {titleLines.length > 0 && (
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight mb-6 [text-shadow:0_2px_28px_rgba(0,0,0,0.75),0_1px_4px_rgba(0,0,0,0.9)]">
+              {titleLines.map((l, i) => (
+                <span key={l.key}>
+                  <span className={l.className}>{t(settings, l.key)}</span>
+                  {i < titleLines.length - 1 && <br />}
+                </span>
+              ))}
+            </h1>
+          )}
 
-          <p className="text-white/95 text-base md:text-lg leading-relaxed mb-10 max-w-xl [text-shadow:0_2px_16px_rgba(0,0,0,0.65)]">
-            {t(settings, 'hero_subtitle')}
-          </p>
+          {/* Subtítulo */}
+          {visible(settings, 'hero_subtitle') && (
+            <p className="text-white/95 text-base md:text-lg leading-relaxed mb-10 max-w-xl [text-shadow:0_2px_16px_rgba(0,0,0,0.65)]">
+              {t(settings, 'hero_subtitle')}
+            </p>
+          )}
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
-            <button
-              onClick={scrollToContact}
-              className="inline-flex items-center justify-center gap-2 bg-rose-accent hover:bg-rose-dark text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 hover:shadow-lg active:scale-95"
-            >
-              {t(settings, 'hero_cta_primary')}
-              <Heart size={16} className="fill-white text-white shrink-0" />
-            </button>
-            <button
-              onClick={() => document.getElementById('sobre-mi')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-rose-soft/15 border border-rose-soft/85 text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 active:scale-95"
-            >
-              {t(settings, 'hero_cta_secondary')}
-            </button>
-          </div>
+          {/* Botones */}
+          {(showCtaPrimary || showCtaSecondary) && (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center w-full sm:w-auto">
+              {showCtaPrimary && (
+                <button
+                  onClick={scrollToContact}
+                  className="inline-flex items-center justify-center gap-2 bg-rose-accent hover:bg-rose-dark text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 hover:shadow-lg active:scale-95"
+                >
+                  {t(settings, 'hero_cta_primary')}
+                  <Heart size={16} className="fill-white text-white shrink-0" />
+                </button>
+              )}
+              {showCtaSecondary && (
+                <button
+                  onClick={() => document.getElementById('sobre-mi')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="inline-flex items-center justify-center gap-2 bg-transparent hover:bg-rose-soft/15 border border-rose-soft/85 text-white font-medium px-8 py-3.5 rounded-full transition-all duration-200 active:scale-95"
+                >
+                  {t(settings, 'hero_cta_secondary')}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Teaser guía gratuita */}
-          <button
-            onClick={() => document.getElementById('guia-gratuita')?.scrollIntoView({ behavior: 'smooth' })}
-            className="inline-flex items-center gap-2 mt-2 transition-opacity duration-200 hover:opacity-80 active:scale-95"
-          >
-            <span className="text-xl">🎁</span>
-            <span className="text-white/75 text-sm underline underline-offset-2 decoration-white/40">
-              {t(settings, 'hero_teaser')}
-            </span>
-          </button>
+          {visible(settings, 'hero_teaser') && (
+            <button
+              onClick={() => document.getElementById('guia-gratuita')?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center gap-2 mt-2 transition-opacity duration-200 hover:opacity-80 active:scale-95"
+            >
+              <span className="text-xl">🎁</span>
+              <span className="text-white/75 text-sm underline underline-offset-2 decoration-white/40">
+                {t(settings, 'hero_teaser')}
+              </span>
+            </button>
+          )}
+
         </div>
       </div>
     </section>
