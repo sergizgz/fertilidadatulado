@@ -1222,6 +1222,146 @@ function SubscribersSection({ token }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Sección: Portada (Hero texts)
+// ─────────────────────────────────────────────────────────────────────────────
+const HERO_DEFAULTS = {
+  hero_badge:         'Asesora especializada en fertilidad',
+  hero_title_1:       'Entiende tu ciclo.',
+  hero_title_2:       'Acompaña tu proceso.',
+  hero_title_3:       'Con respuestas, no silencios.',
+  hero_subtitle:      'Entender tu cuerpo es el primer paso para vivir la búsqueda de embarazo con más claridad y tranquilidad. Buscar un embarazo no debería vivirse a ciegas ni en soledad.',
+  hero_cta_primary:   'Quiero hablar contigo',
+  hero_cta_secondary: 'Conóceme',
+  hero_teaser:        '¿Primera vez aquí? Descarga mi guía gratuita sobre fertilidad',
+}
+
+const HERO_KEYS = Object.keys(HERO_DEFAULTS)
+
+const HERO_LABELS = {
+  hero_badge:         'Etiqueta del badge superior',
+  hero_title_1:       'Título — línea 1 (blanca)',
+  hero_title_2:       'Título — línea 2 (rosa, destacada)',
+  hero_title_3:       'Título — línea 3 (blanca)',
+  hero_subtitle:      'Subtítulo / descripción',
+  hero_cta_primary:   'Botón principal',
+  hero_cta_secondary: 'Botón secundario',
+  hero_teaser:        'Texto del enlace a la guía gratuita',
+}
+
+const HERO_MULTILINE = ['hero_subtitle']
+
+function PortadaSection() {
+  const [form, setForm]     = useState({ ...HERO_DEFAULTS })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]   = useState(false)
+  const [saved, setSaved]     = useState(false)
+  const [error, setError]     = useState('')
+
+  useEffect(() => {
+    supabase.from('site_settings').select('key, value')
+      .in('key', HERO_KEYS)
+      .then(({ data }) => {
+        if (data) {
+          const map = Object.fromEntries(data.map(r => [r.key, r.value]))
+          setForm(f => ({ ...f, ...map }))
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false); setError('')
+    const rows = HERO_KEYS.map(key => ({ key, value: form[key] || HERO_DEFAULTS[key] }))
+    const { error: err } = await supabase.from('site_settings').upsert(rows)
+    setSaving(false)
+    if (err) setError(err.message)
+    else setSaved(true)
+  }
+
+  const handleReset = (key) => setForm(f => ({ ...f, [key]: HERO_DEFAULTS[key] }))
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm">
+      <Loader2 size={18} className="animate-spin mr-2" /> Cargando...
+    </div>
+  )
+
+  const groups = [
+    { title: 'Badge y título', keys: ['hero_badge', 'hero_title_1', 'hero_title_2', 'hero_title_3'] },
+    { title: 'Subtítulo',      keys: ['hero_subtitle'] },
+    { title: 'Botones',        keys: ['hero_cta_primary', 'hero_cta_secondary'] },
+    { title: 'Enlace guía',    keys: ['hero_teaser'] },
+  ]
+
+  return (
+    <div className="space-y-8 max-w-3xl">
+      <div>
+        <h2 className="font-serif text-xl text-[#2A2A2A]">Portada</h2>
+        <p className="text-sm text-[#9B9B9B] mt-1">Edita todos los textos de la pantalla de inicio. La foto y los filtros se gestionan en <strong>Imágenes</strong>.</p>
+      </div>
+
+      {groups.map(({ title, keys }) => (
+        <div key={title} className="bg-white rounded-2xl border border-cream-darker/30 p-6">
+          <h3 className="font-medium text-[#2A2A2A] text-sm mb-4">{title}</h3>
+          <div className="space-y-4">
+            {keys.map(key => (
+              <div key={key}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-[#6B6B6B]">{HERO_LABELS[key]}</label>
+                  {form[key] !== HERO_DEFAULTS[key] && (
+                    <button
+                      onClick={() => handleReset(key)}
+                      className="text-xs text-[#9B9B9B] hover:text-rose-accent transition-colors"
+                    >
+                      ↩ Restaurar original
+                    </button>
+                  )}
+                </div>
+                {HERO_MULTILINE.includes(key) ? (
+                  <textarea
+                    rows={3}
+                    value={form[key]}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    className="w-full border border-cream-darker/50 rounded-xl px-4 py-3 text-sm text-[#2A2A2A] leading-relaxed focus:outline-none focus:border-rose-accent resize-none transition-colors"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={form[key]}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    className="w-full border border-cream-darker/50 rounded-xl px-4 py-2.5 text-sm text-[#2A2A2A] focus:outline-none focus:border-rose-accent transition-colors"
+                  />
+                )}
+                {key === 'hero_title_2' && (
+                  <p className="text-xs text-[#9B9B9B] mt-1">Esta línea aparece en rosa y en cursiva en la web.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Guardar */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 bg-rose-accent hover:bg-rose-dark disabled:opacity-60 text-white text-sm font-medium px-6 py-2.5 rounded-full transition-colors"
+        >
+          {saving ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : 'Guardar cambios'}
+        </button>
+        {saved && (
+          <p className="flex items-center gap-1.5 text-green-600 text-xs">
+            <CheckCircle size={13} /> ¡Guardado! Los cambios ya son visibles en la web.
+          </p>
+        )}
+        {error && <p className="text-red-500 text-xs">{error}</p>}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Sección: Biografía
 // ─────────────────────────────────────────────────────────────────────────────
 function BiographySection() {
@@ -1411,6 +1551,7 @@ const NAV_ITEMS = [
   { id: 'subscribers', label: 'Suscriptores', icon: Users },
   { id: 'blog',        label: 'Blog',         icon: BookOpen },
   { id: 'services',    label: 'Servicios',    icon: Layers },
+  { id: 'portada',     label: 'Portada',      icon: Sun },
   { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
   { id: 'images',      label: 'Imágenes',     icon: ImageIcon },
 ]
@@ -1523,6 +1664,7 @@ function Dashboard({ session, onLogout }) {
                 <BlogSection token={session.access_token} />
               )}
               {activeSection === 'services' && <ServicesSection />}
+              {activeSection === 'portada' && <PortadaSection />}
               {activeSection === 'biography' && <BiographySection />}
               {activeSection === 'images' && <ImagesSection />}
             </>
