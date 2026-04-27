@@ -27,16 +27,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Error al guardar' })
     }
 
-    // URL del PDF desde site_settings (actualizable desde el panel privado)
-    const { data: setting } = await supabase
-      .from('site_settings')
-      .select('value')
-      .eq('key', 'ebook_pdf_url')
-      .single()
-
-    const pdfUrl = setting?.value || '/ebook.pdf'
-
-    return res.status(200).json({ ok: true, pdfUrl })
+    // Siempre devolvemos /api/ebook — ese endpoint sirve el PDF con el nombre correcto
+    return res.status(200).json({ ok: true, pdfUrl: '/api/ebook' })
   } catch (err) {
     console.error('Error en /api/subscribe:', err)
     return res.status(500).json({ error: 'Error interno' })
