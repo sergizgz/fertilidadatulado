@@ -1824,16 +1824,34 @@ function EstructuraSection() {
   )
 }
 
-const NAV_ITEMS = [
-  { id: 'stats',       label: 'Resumen',      icon: LayoutDashboard },
-  { id: 'submissions', label: 'Solicitudes',  icon: Mail },
-  { id: 'subscribers', label: 'Suscriptores', icon: Users },
-  { id: 'blog',        label: 'Blog',         icon: BookOpen },
-  { id: 'services',    label: 'Servicios',    icon: Layers },
-  { id: 'portada',     label: 'Portada',      icon: Sun },
-  { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
-  { id: 'estructura',  label: 'Estructura',   icon: LayoutGrid },
+const NAV_GROUPS = [
+  {
+    label: 'Actividad',
+    items: [
+      { id: 'stats',       label: 'Resumen',      icon: LayoutDashboard },
+      { id: 'submissions', label: 'Solicitudes',  icon: Mail },
+      { id: 'subscribers', label: 'Suscriptores', icon: Users },
+    ],
+  },
+  {
+    label: 'Contenido',
+    items: [
+      { id: 'blog',        label: 'Blog',         icon: BookOpen },
+      { id: 'services',    label: 'Servicios',    icon: Layers },
+    ],
+  },
+  {
+    label: 'Web',
+    items: [
+      { id: 'portada',     label: 'Portada',      icon: Sun },
+      { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
+      { id: 'estructura',  label: 'Estructura',   icon: LayoutGrid },
+    ],
+  },
 ]
+
+// Lista plana para búsquedas rápidas (topbar, etc.)
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap(g => g.items)
 
 const INACTIVITY_LIMIT = 2 * 60 * 60 * 1000  // 2 horas sin actividad → cierre automático
 const WARNING_BEFORE   = 5 * 60 * 1000        // aviso 5 minutos antes
@@ -1927,8 +1945,17 @@ function Dashboard({ session, onLogout }) {
           <p className="font-serif text-base text-[#2A2A2A]">Fertilidad <span className="text-rose-accent">a Tu Lado</span></p>
           <p className="text-xs text-[#9B9B9B] mt-0.5">Panel de gestión</p>
         </div>
-        <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map(item => <NavItem key={item.id} item={item} />)}
+        <nav className="flex-1 space-y-5 overflow-y-auto">
+          {NAV_GROUPS.map(group => (
+            <div key={group.label}>
+              <p className="px-4 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#C0C0C0]">
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {group.items.map(item => <NavItem key={item.id} item={item} />)}
+              </div>
+            </div>
+          ))}
         </nav>
         <div className="border-t border-cream-dark pt-4">
           <button onClick={onLogout}
@@ -1947,8 +1974,17 @@ function Dashboard({ session, onLogout }) {
               <p className="font-serif text-base text-[#2A2A2A]">Panel</p>
               <button onClick={() => setSidebarOpen(false)}><X size={20} className="text-[#9B9B9B]" /></button>
             </div>
-            <nav className="flex-1 space-y-1">
-              {NAV_ITEMS.map(item => <NavItem key={item.id} item={item} />)}
+            <nav className="flex-1 space-y-5 overflow-y-auto">
+              {NAV_GROUPS.map(group => (
+                <div key={group.label}>
+                  <p className="px-4 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#C0C0C0]">
+                    {group.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {group.items.map(item => <NavItem key={item.id} item={item} />)}
+                  </div>
+                </div>
+              ))}
             </nav>
             <button onClick={onLogout}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#9B9B9B]">
@@ -1967,7 +2003,7 @@ function Dashboard({ session, onLogout }) {
               <Menu size={20} className="text-[#6B6B6B]" />
             </button>
             <h1 className="font-medium text-[#2A2A2A] text-sm">
-              {NAV_ITEMS.find(i => i.id === activeSection)?.label}
+              {ALL_NAV_ITEMS.find(i => i.id === activeSection)?.label}
             </h1>
           </div>
           <span className="text-xs text-[#9B9B9B]">{session.user.email}</span>
