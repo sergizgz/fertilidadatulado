@@ -47,7 +47,7 @@ function ServiceCard({ s }) {
         {s.description}
       </p>
       <ul className="space-y-2 mb-8 flex-1">
-        {(s.includes ?? []).map(item => (
+        {(Array.isArray(s.includes) ? s.includes : (s.includes ? JSON.parse(s.includes) : [])).map(item => (
           <li key={item} className={`text-sm flex items-center gap-2 ${s.featured ? 'text-white/90' : 'text-[#2A2A2A]'}`}>
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.featured ? 'bg-white' : 'bg-rose-accent'}`} />
             {item}
