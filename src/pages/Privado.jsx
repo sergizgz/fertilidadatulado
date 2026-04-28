@@ -1981,6 +1981,157 @@ function IgFormSection({ token }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Sección: Política de Privacidad (editor)
+// ─────────────────────────────────────────────────────────────────────────────
+const DEFAULT_PRIVACY_SECTIONS = [
+  { title: 'Responsable del Tratamiento', content: 'Nombre: Fertilidad a Tu Lado\nCorreo: hola@fertilidadatulado.com' },
+  { title: 'Datos que recopilamos', content: 'Únicamente los datos necesarios para atender tu consulta o solicitud:\n• Nombre\n• Correo electrónico\n• Información que compartas voluntariamente en tu mensaje' },
+  { title: 'Finalidad del tratamiento', content: 'Utilizamos tus datos exclusivamente para:\n• Responder a tus consultas\n• Gestionar solicitudes de acompañamiento\n• Mantener comunicación para resolver dudas relacionadas con nuestros servicios' },
+  { title: 'Legitimación', content: 'La base legal para el tratamiento es tu consentimiento, otorgado al enviar el formulario.' },
+  { title: 'Conservación de los datos', content: 'Tus datos se conservarán únicamente durante el tiempo necesario para responder tu consulta o mientras exista una relación profesional. Posteriormente serán eliminados de manera segura.' },
+  { title: 'Destinatarios', content: 'No compartimos tus datos con terceros. No cedemos, vendemos ni transferimos información personal.' },
+  { title: 'Tus derechos', content: 'Puedes ejercer tus derechos en cualquier momento:\n• Acceso\n• Rectificación\n• Supresión\n• Limitación\n• Portabilidad\n• Oposición\n\nPara ejercerlos, escribe a: hola@fertilidadatulado.com' },
+  { title: 'Medidas de seguridad', content: 'Aplicamos medidas técnicas y organizativas adecuadas para garantizar la seguridad y confidencialidad de tus datos.' },
+  { title: 'Reclamaciones', content: 'Si consideras que tus derechos no han sido respetados, puedes presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD).' },
+]
+
+function PrivacidadSection() {
+  const [sections, setSections] = useState(DEFAULT_PRIVACY_SECTIONS)
+  const [lastUpdated, setLastUpdated] = useState('')
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [saved, setSaved]       = useState(false)
+  const [error, setError]       = useState('')
+
+  useEffect(() => {
+    supabase.from('site_settings').select('key, value')
+      .in('key', ['privacy_sections', 'privacy_last_updated'])
+      .then(({ data }) => {
+        if (!data) return
+        const map = Object.fromEntries(data.map(r => [r.key, r.value]))
+        try {
+          const parsed = map.privacy_sections ? JSON.parse(map.privacy_sections) : null
+          if (Array.isArray(parsed) && parsed.length) setSections(parsed)
+        } catch { /**/ }
+        if (map.privacy_last_updated) setLastUpdated(map.privacy_last_updated)
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false); setError('')
+    const now = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+    const rows = [
+      { key: 'privacy_sections',     value: JSON.stringify(sections.filter(s => s.title.trim())) },
+      { key: 'privacy_last_updated', value: now },
+    ]
+    const { error: err } = await supabase.from('site_settings').upsert(rows)
+    setSaving(false)
+    if (err) { setError(err.message) }
+    else { setSaved(true); setLastUpdated(now); setTimeout(() => setSaved(false), 3000) }
+  }
+
+  const updateSection = (i, field, val) =>
+    setSections(prev => prev.map((s, j) => j === i ? { ...s, [field]: val } : s))
+
+  const addSection = () =>
+    setSections(prev => [...prev, { title: 'Nuevo apartado', content: '' }])
+
+  const removeSection = (i) =>
+    setSections(prev => prev.filter((_, j) => j !== i))
+
+  const moveSection = (i, dir) => {
+    const next = [...sections]
+    const swap = i + dir
+    if (swap < 0 || swap >= next.length) return
+    ;[next[i], next[swap]] = [next[swap], next[i]]
+    setSections(next)
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm">
+      <Loader2 size={18} className="animate-spin mr-2" /> Cargando...
+    </div>
+  )
+
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-xl text-[#2A2A2A]">Política de Privacidad</h2>
+          <p className="text-sm text-[#9B9B9B] mt-1">
+            Edita los apartados que aparecen en <span className="font-medium">/privacidad</span>.
+            {lastUpdated && <span className="ml-1">Última actualización: <em>{lastUpdated}</em>.</span>}
+          </p>
+        </div>
+        <a href="/privacidad" target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-rose-accent hover:text-rose-dark border border-rose-soft rounded-full px-3 py-1.5 transition-colors shrink-0">
+          <ExternalLink size={12} /> Ver página
+        </a>
+      </div>
+
+      <div className="space-y-3">
+        {sections.map((section, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-cream-darker/30 p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="font-serif text-lg font-bold text-rose-soft shrink-0 w-7 text-right">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <input
+                type="text"
+                value={section.title}
+                onChange={e => updateSection(i, 'title', e.target.value)}
+                className="flex-1 border border-cream-darker rounded-xl px-3 py-2 text-sm font-medium text-[#2A2A2A] focus:outline-none focus:border-rose-accent bg-white transition-colors"
+                placeholder="Título del apartado"
+              />
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => moveSection(i, -1)} disabled={i === 0}
+                  className="p-1.5 rounded-lg text-[#C0C0C0] hover:text-[#6B6B6B] disabled:opacity-30 transition-colors" title="Subir">
+                  <ArrowUp size={14} />
+                </button>
+                <button onClick={() => moveSection(i, 1)} disabled={i === sections.length - 1}
+                  className="p-1.5 rounded-lg text-[#C0C0C0] hover:text-[#6B6B6B] disabled:opacity-30 transition-colors" title="Bajar">
+                  <ArrowDown size={14} />
+                </button>
+                <button onClick={() => removeSection(i)}
+                  className="p-1.5 rounded-lg text-[#C0C0C0] hover:text-red-400 hover:bg-red-50 transition-colors" title="Eliminar">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+            <textarea
+              rows={4}
+              value={section.content}
+              onChange={e => updateSection(i, 'content', e.target.value)}
+              placeholder={'Texto del apartado.\nUsa • al inicio de una línea para listas con puntos.'}
+              className="w-full border border-cream-darker rounded-xl px-4 py-3 text-sm text-[#4A4A4A] focus:outline-none focus:border-rose-accent bg-cream/30 resize-y transition-colors leading-relaxed"
+            />
+          </div>
+        ))}
+      </div>
+
+      <button onClick={addSection}
+        className="w-full py-3 border-2 border-dashed border-cream-darker rounded-2xl text-sm text-[#9B9B9B] hover:border-rose-accent hover:text-rose-accent transition-colors flex items-center justify-center gap-2">
+        <Plus size={15} /> Añadir apartado
+      </button>
+
+      <div className="flex items-center gap-3">
+        <button onClick={handleSave} disabled={saving}
+          className="inline-flex items-center gap-2 bg-rose-accent hover:bg-rose-dark text-white text-sm font-medium px-6 py-2.5 rounded-full transition-colors disabled:opacity-60">
+          {saving ? <><Loader2 size={14} className="animate-spin" /> Guardando...</> : 'Guardar cambios'}
+        </button>
+        {saved && <span className="text-sm text-emerald-600 flex items-center gap-1.5"><CheckCircle size={14} /> Guardado</span>}
+        {error && <span className="text-sm text-red-500">{error}</span>}
+      </div>
+
+      <div className="bg-cream-dark rounded-2xl p-4 text-xs text-[#9B9B9B] leading-relaxed">
+        <strong className="text-[#6B6B6B]">Consejo:</strong> Usa <code className="bg-white px-1 py-0.5 rounded text-rose-accent">•</code> al inicio de una línea para crear listas con puntos. Deja una línea en blanco entre párrafos.
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Sección: Estructura (visibilidad de secciones de la web)
 // ─────────────────────────────────────────────────────────────────────────────
 const SITE_SECTIONS = [
@@ -2135,6 +2286,7 @@ const NAV_GROUPS = [
     items: [
       { id: 'portada',     label: 'Portada',      icon: Sun },
       { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
+      { id: 'privacidad',  label: 'Privacidad',   icon: Shield },
       { id: 'estructura',  label: 'Estructura',   icon: LayoutGrid },
     ],
   },
@@ -2322,6 +2474,7 @@ function Dashboard({ session, onLogout }) {
               {activeSection === 'services' && <ServicesSection />}
               {activeSection === 'portada' && <PortadaSection />}
               {activeSection === 'biography' && <BiographySection />}
+              {activeSection === 'privacidad' && <PrivacidadSection />}
               {activeSection === 'estructura' && <EstructuraSection />}
             </>
           )}
