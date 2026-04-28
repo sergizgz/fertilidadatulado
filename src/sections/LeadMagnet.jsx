@@ -105,9 +105,6 @@ export default function LeadMagnet() {
                       onError={e => { e.target.style.display = 'none' }}
                     />
 
-                    {/* Overlay degradado solo en la parte baja para que se lea el texto */}
-                    <div className="absolute inset-0"
-                         style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(40,10,20,0.7) 80%, rgba(40,10,20,0.92) 100%)' }} />
 
                     {/* Contenido portada */}
                     <div className="absolute inset-0 p-5 flex flex-col justify-between z-10">
@@ -121,15 +118,7 @@ export default function LeadMagnet() {
                         </p>
                       </div>
 
-                      {/* Título abajo */}
-                      <div>
-                        <p style={{ fontSize: '10px', color: 'rgba(242,200,208,0.7)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
-                          Guía gratuita
-                        </p>
-                        <p style={{ fontSize: '19px', fontFamily: 'Georgia, serif', fontWeight: 700, color: 'white', lineHeight: 1.3 }}>
-                          Por qué no te quedas <em style={{ color: '#F2C8D0' }}>embarazada</em> aunque todo esté bien
-                        </p>
-                      </div>
+                      <div />
                     </div>
                   </div>
                 </div>
