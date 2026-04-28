@@ -99,7 +99,7 @@ export default function LeadMagnet() {
                   >
                     {/* Foto de fondo */}
                     <img
-                      src="/portada-ebook.jpg"
+                      src="/portada-ebook2.png"
                       alt=""
                       className="absolute inset-0 w-full h-full object-cover object-top mix-blend-overlay opacity-60"
                       onError={e => { e.target.style.display = 'none' }}
