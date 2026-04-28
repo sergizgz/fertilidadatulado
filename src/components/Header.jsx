@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 function LogoIcon({ size = 36, className = '' }) {
   return (
@@ -18,18 +19,22 @@ function LogoIcon({ size = 36, className = '' }) {
   )
 }
 
-const navLinks = [
-  { label: 'Sobre mí', href: '/#sobre-mi' },
-  { label: 'Servicios', href: '/#servicios' },
-  { label: 'Cómo funciona', href: '/#como-funciona' },
-  { label: 'Testimonios', href: '/#testimonios' },
-  { label: 'Blog', href: '/blog' },
+const ALL_NAV_LINKS = [
+  { label: 'Sobre mí',      href: '/#sobre-mi',      sectionKey: 'about' },
+  { label: 'Servicios',     href: '/#servicios',     sectionKey: 'services' },
+  { label: 'Cómo funciona', href: '/#como-funciona', sectionKey: 'howitworks' },
+  { label: 'Testimonios',   href: '/#testimonios',   sectionKey: 'testimonials' },
+  { label: 'Blog',          href: '/blog',            sectionKey: 'blogpreview' },
 ]
 
 export default function Header() {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
+  const { settings } = useSiteSettings()
+
+  const vis = (key) => settings[`section_${key}_visible`] !== '0'
+  const navLinks = ALL_NAV_LINKS.filter(l => vis(l.sectionKey))
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -87,20 +92,24 @@ export default function Header() {
               </Link>
             )
           ))}
-          <a
-            href="/#guia-gratuita"
-            onClick={e => handleNavClick(e, '/#guia-gratuita')}
-            className="text-sm font-medium px-4 py-2 rounded-full border border-rose-accent text-rose-accent hover:bg-rose-soft/30 transition-all duration-200 active:scale-95 flex items-center gap-1.5"
-          >
-            🎁 Guía gratis
-          </a>
-          <a
-            href="/#contacto"
-            onClick={e => handleNavClick(e, '/#contacto')}
-            className="text-sm font-medium px-5 py-2.5 rounded-full bg-rose-accent text-white hover:bg-rose-dark transition-all duration-200 active:scale-95"
-          >
-            Contactar
-          </a>
+          {vis('leadmagnet') && (
+            <a
+              href="/#guia-gratuita"
+              onClick={e => handleNavClick(e, '/#guia-gratuita')}
+              className="text-sm font-medium px-4 py-2 rounded-full border border-rose-accent text-rose-accent hover:bg-rose-soft/30 transition-all duration-200 active:scale-95 flex items-center gap-1.5"
+            >
+              🎁 Guía gratis
+            </a>
+          )}
+          {vis('contact') && (
+            <a
+              href="/#contacto"
+              onClick={e => handleNavClick(e, '/#contacto')}
+              className="text-sm font-medium px-5 py-2.5 rounded-full bg-rose-accent text-white hover:bg-rose-dark transition-all duration-200 active:scale-95"
+            >
+              Contactar
+            </a>
+          )}
         </nav>
 
         {/* Mobile toggle */}
@@ -136,13 +145,15 @@ export default function Header() {
               </Link>
             )
           ))}
-          <a
-            href="/#contacto"
-            onClick={e => handleNavClick(e, '/#contacto')}
-            className="btn-primary justify-center mt-2"
-          >
-            Contactar
-          </a>
+          {vis('contact') && (
+            <a
+              href="/#contacto"
+              onClick={e => handleNavClick(e, '/#contacto')}
+              className="btn-primary justify-center mt-2"
+            >
+              Contactar
+            </a>
+          )}
         </div>
       )}
     </header>
