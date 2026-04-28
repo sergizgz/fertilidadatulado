@@ -117,15 +117,6 @@ export default function Formulario() {
 
       <div className="min-h-screen bg-cream px-4 py-12">
         <div className="max-w-[560px] mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <p className="text-2xl mb-2">🌷</p>
-            <h1 className="font-serif text-xl font-semibold text-rose-dark">
-              Fertilidad a Tu Lado
-            </h1>
-            <p className="text-gray-500 text-xs mt-1">Lidia · Enfermera especialista en reproducción asistida</p>
-          </div>
-
           {/* Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-cream-darker overflow-hidden">
             <div className="bg-rose-accent px-6 py-5">
