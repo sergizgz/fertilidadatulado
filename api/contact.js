@@ -91,7 +91,6 @@ export default async function handler(req, res) {
     })
 
     // ── 2. Correo de confirmación a la persona que consulta ─────────────────
-    // TODO: cambiar 'to' a simplemente `email` cuando el dominio esté verificado
     await resend.emails.send({
       from: FROM_ADDRESS,
       to: email,

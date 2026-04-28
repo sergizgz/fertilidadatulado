@@ -44,7 +44,7 @@ async function handleGet(req, res) {
   const { data, error } = await query
   if (error) {
     console.error('posts GET error:', JSON.stringify(error))
-    return res.status(500).json({ error: 'Error al obtener los posts', detail: error.message })
+    return res.status(500).json({ error: 'Error al obtener los posts' })
   }
   return res.status(200).json({ posts: data ?? [] })
 }
