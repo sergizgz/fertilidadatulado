@@ -7,8 +7,14 @@ import Testimonials from '../sections/Testimonials'
 import LeadMagnet from '../sections/LeadMagnet'
 import BlogPreview from '../sections/BlogPreview'
 import Contact from '../sections/Contact'
+import { useSiteSettings } from '../hooks/useSiteSettings'
 
 export default function Home() {
+  const { settings } = useSiteSettings()
+
+  // Devuelve true si la sección es visible (por defecto sí, salvo que esté explícitamente en '0')
+  const vis = (key) => settings[`section_${key}_visible`] !== '0'
+
   return (
     <>
       <SEO
@@ -16,13 +22,13 @@ export default function Home() {
         canonical="/"
       />
       <Hero />
-      <About />
-      <Services />
-      <HowItWorks />
-      <Testimonials />
-      <LeadMagnet />
-      <BlogPreview />
-      <Contact />
+      {vis('about')        && <About />}
+      {vis('services')     && <Services />}
+      {vis('howitworks')   && <HowItWorks />}
+      {vis('testimonials') && <Testimonials />}
+      {vis('leadmagnet')   && <LeadMagnet />}
+      {vis('blogpreview')  && <BlogPreview />}
+      {vis('contact')      && <Contact />}
     </>
   )
 }

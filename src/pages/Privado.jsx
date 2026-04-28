@@ -8,7 +8,7 @@ import {
   Download, ExternalLink, Menu, X, StickyNote, CheckCircle2,
   Clock, PhoneCall, XCircle, BookOpen, ImageIcon, Upload, CheckCircle, AlertCircle, Loader2,
   Leaf, Heart, Stethoscope, Baby, Star, Shield, Sparkles, Moon, Sun,
-  Layers, Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, ArrowUp, ArrowDown,
+  Layers, Plus, Pencil, Trash2, GripVertical, Eye, EyeOff, ArrowUp, ArrowDown, LayoutGrid,
 } from 'lucide-react'
 import PostList from '../components/blog/PostList'
 import PostEditor from '../components/blog/PostEditor'
@@ -1691,6 +1691,139 @@ function BiographySection() {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Sección: Estructura (visibilidad de secciones de la web)
+// ─────────────────────────────────────────────────────────────────────────────
+const SITE_SECTIONS = [
+  { key: 'hero',         label: 'Portada',          desc: 'Hero principal con imagen y títulos',               icon: Sun,           alwaysOn: true },
+  { key: 'about',        label: 'Conóceme',         desc: 'Presentación y biografía de Lidia',                 icon: Heart },
+  { key: 'services',     label: 'Servicios',        desc: 'Tarjetas de los servicios disponibles',             icon: Layers },
+  { key: 'howitworks',   label: 'Cómo trabajamos',  desc: 'Pasos del proceso de acompañamiento',               icon: CheckCircle2 },
+  { key: 'testimonials', label: 'Testimonios',      desc: 'Opiniones de pacientes',                            icon: Star },
+  { key: 'leadmagnet',   label: 'Guía gratuita',    desc: 'Descarga del ebook de fertilidad',                  icon: Download },
+  { key: 'blogpreview',  label: 'Blog',             desc: 'Preview de los artículos más recientes',            icon: BookOpen },
+  { key: 'contact',      label: 'Contacto',         desc: 'Formulario de contacto',                            icon: Mail },
+]
+
+function EstructuraSection() {
+  const [visibility, setVisibility] = useState({})
+  const [loading, setLoading]       = useState(true)
+  const [saving, setSaving]         = useState(null)
+
+  useEffect(() => {
+    const keys = SITE_SECTIONS.map(s => `section_${s.key}_visible`)
+    supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', keys)
+      .then(({ data }) => {
+        if (data) setVisibility(Object.fromEntries(data.map(r => [r.key, r.value])))
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const toggle = async (sectionKey) => {
+    const settingKey = `section_${sectionKey}_visible`
+    const current    = visibility[settingKey] !== '0'   // default true si no existe
+    const newVal     = current ? '0' : '1'
+
+    setSaving(sectionKey)
+    setVisibility(prev => ({ ...prev, [settingKey]: newVal }))
+
+    await supabase
+      .from('site_settings')
+      .upsert({ key: settingKey, value: newVal }, { onConflict: 'key' })
+
+    setSaving(null)
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40 text-[#9B9B9B] text-sm gap-2">
+      <Loader2 size={16} className="animate-spin" /> Cargando…
+    </div>
+  )
+
+  const visibleCount = SITE_SECTIONS.filter(s => visibility[`section_${s.key}_visible`] !== '0').length
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif text-2xl text-[#2A2A2A]">Estructura de la web</h2>
+        <p className="text-sm text-[#9B9B9B] mt-1">{visibleCount} de {SITE_SECTIONS.length} secciones visibles</p>
+      </div>
+
+      <div className="bg-amber-50 border border-amber-100 rounded-2xl px-5 py-4 flex items-start gap-3">
+        <AlertCircle size={16} className="text-amber-500 mt-0.5 shrink-0" />
+        <p className="text-sm text-amber-700 leading-relaxed">
+          Los cambios se aplican al instante. Los visitantes que ya tengan la página abierta necesitarán recargarla.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {SITE_SECTIONS.map(section => {
+          const settingKey = `section_${section.key}_visible`
+          const isVisible  = visibility[settingKey] !== '0'
+          const isSaving   = saving === section.key
+          const Icon       = section.icon
+
+          return (
+            <div
+              key={section.key}
+              className={`bg-white rounded-2xl px-5 py-4 flex items-center gap-4 transition-opacity ${
+                !isVisible && !section.alwaysOn ? 'opacity-60' : ''
+              }`}
+            >
+              {/* Icono */}
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                isVisible ? 'bg-rose-soft/40 text-rose-accent' : 'bg-cream-dark text-[#9B9B9B]'
+              }`}>
+                <Icon size={18} />
+              </div>
+
+              {/* Textos */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#2A2A2A] flex items-center gap-2">
+                  {section.label}
+                  {section.alwaysOn && (
+                    <span className="text-xs bg-cream-dark text-[#9B9B9B] px-2 py-0.5 rounded-full font-normal">
+                      Siempre visible
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-[#9B9B9B] mt-0.5">{section.desc}</p>
+              </div>
+
+              {/* Toggle */}
+              {section.alwaysOn ? (
+                <div className="w-11 h-6 rounded-full bg-rose-accent opacity-50 shrink-0" />
+              ) : (
+                <button
+                  onClick={() => toggle(section.key)}
+                  disabled={isSaving}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none disabled:opacity-60 ${
+                    isVisible ? 'bg-rose-accent' : 'bg-cream-darker'
+                  }`}
+                  title={isVisible ? 'Ocultar sección' : 'Mostrar sección'}
+                >
+                  {isSaving ? (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 size={12} className="animate-spin text-white" />
+                    </span>
+                  ) : (
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      isVisible ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  )}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const NAV_ITEMS = [
   { id: 'stats',       label: 'Resumen',      icon: LayoutDashboard },
   { id: 'submissions', label: 'Solicitudes',  icon: Mail },
@@ -1699,6 +1832,7 @@ const NAV_ITEMS = [
   { id: 'services',    label: 'Servicios',    icon: Layers },
   { id: 'portada',     label: 'Portada',      icon: Sun },
   { id: 'biography',   label: 'Biografía',    icon: MessageSquare },
+  { id: 'estructura',  label: 'Estructura',   icon: LayoutGrid },
 ]
 
 const INACTIVITY_LIMIT = 2 * 60 * 60 * 1000  // 2 horas sin actividad → cierre automático
@@ -1861,6 +1995,7 @@ function Dashboard({ session, onLogout }) {
               {activeSection === 'services' && <ServicesSection />}
               {activeSection === 'portada' && <PortadaSection />}
               {activeSection === 'biography' && <BiographySection />}
+              {activeSection === 'estructura' && <EstructuraSection />}
             </>
           )}
         </main>
